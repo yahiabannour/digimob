@@ -1,0 +1,6 @@
+piper
+piper-tts
+opencv-python
+Pillow
+sounddevice
+mediapipe
