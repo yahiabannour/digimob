@@ -4,8 +4,8 @@
  brief:     Software zur datenbank der Nutzerverwaltung
  author(s): Fanuel Bimo Setiadi
  adviser:   
- version:   0.0.5
- date:      01.09.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs: sqlite3
  ext. libs: 
@@ -30,11 +30,28 @@ class UserDatabase:
       - Migration entfernt alte Spalten (repetitions_done/goal), falls vorhanden
     """
 
-    def __init__(self, db_name: str = "users.db"):
-        self.db_path = os.path.abspath(db_name)
+    def __init__(self, db_name: str = "users.db", subdir: str = "Benutzerdaten"):
+        # Basisverzeichnis (hier: Verzeichnis der aktuellen Datei)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Unterordner "Benutzerdaten"
+        data_dir = os.path.join(base_dir, subdir)
+
+        # Ordner anlegen, falls er noch nicht existiert
+        os.makedirs(data_dir, exist_ok=True)
+
+        # Pfad zur Datenbank-Datei im Unterordner
+        self.db_path = os.path.join(data_dir, db_name)
         print("[DB] using:", self.db_path)
 
+        # Verbindung herstellen
         self.conn = sqlite3.connect(self.db_path, timeout=5.0)
+
+    # def __init__(self, db_name: str = "users.db"):
+    #     self.db_path = os.path.abspath(db_name)
+    #     print("[DB] using:", self.db_path)
+
+    #     self.conn = sqlite3.connect(self.db_path, timeout=5.0)
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.execute("PRAGMA journal_mode = WAL")
         self.conn.execute("PRAGMA synchronous = NORMAL")

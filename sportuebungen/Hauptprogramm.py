@@ -4,8 +4,8 @@
  brief:     Software für Sportübungen
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi, Mazen Al-Hakami
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.7
- date:      13.09.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.11.2)
  int. libs: time
             tkinter
@@ -150,7 +150,7 @@ class SportApp:
 
         # self.button_start = tk.Button(self.main_menu_frame, text="Übungen wählen", font=("Arial", 24), height=2, width=20, background="lightyellow",command=lambda: self.show_frame(self.operation_frame))
         # self.button_start.grid(row=2, column=0, pady=5, sticky="w")
-        self.button_start = tk.Button(self.main_menu_frame, text="Übungen wählen", font=("Arial", 24), height=2, width=20, background="lightyellow", command=self.start_exercise_menu)  # <-- neue Methode statt direkt show_frame
+        self.button_start = tk.Button(self.main_menu_frame, text="Übungen wählen", font=(self.font_family, self.button_font_size), height=2, width=20, background="lightyellow", command=self.start_exercise_menu)  # <-- neue Methode statt direkt show_frame
         self.button_start.grid(row=2, column=0, pady=5, sticky="w")
 
         self.button_instructions = tk.Button(self.main_menu_frame, text="Bedienungsanleitung", font=(self.font_family, self.button_font_size), height=2, width=20, background="lightyellow", command=self.open_pdf_window)
@@ -249,45 +249,43 @@ class SportApp:
         else:
             messagebox.showwarning("Fehler", f"Nutzer '{name}' existiert bereits.")
 
+   
     # ---------- Nutzer löschen ----------
     def create_deleteUser_view(self):
         logging.debug("Lade GUI-Seite: Nutzer Löschen")
         self._clear_user_frame()
 
-        tk.Label(self.user_frame,text="Nutzer löschen", font=(self.font_family, self.title_font_size)).grid(row=0, column=0, pady=5)
+        tk.Label(self.user_frame, text="Nutzer löschen", font=(self.font_family, self.title_font_size)).grid(row=0, column=0, pady=5)
 
-        self.user_var = tk.StringVar()
-        self.user_dropdown = ttk.Combobox(self.user_frame, textvariable=self.user_var, font=(self.font_family, self.button_font_size), height=2, width=20, state="readonly")
-        self.user_dropdown.grid(row=1, column=0, pady=5)
-        self._reload_users_into_combobox(self.user_dropdown, self.user_var)
+        self.user_listbox = tk.Listbox(self.user_frame, font=(self.font_family, self.button_font_size), height=12, width=40, selectmode=tk.SINGLE)
+        self.user_listbox.grid(row=1, column=0, pady=5)
+        self._reload_users_into_listbox(self.user_listbox)
 
         tk.Button(
             self.user_frame, text="Nutzer löschen",
             command=self.confirm_delete_user_action, font=(self.font_family, self.button_font_size), height=2, width=20, background="lightyellow"
-        ).grid(row=2, column=0, pady=5)
+        ).grid(row=2, column=0, pady=5, sticky="w")
 
         tk.Button(
             self.user_frame, text="Zurück",
             command=self.configure_user_frame, font=(self.font_family, self.button_font_size), height=2, width=20, background="lightblue"
-        ).grid(row=12, column=0, pady=650, sticky="w")
+        ).grid(row=12, column=0, pady=250, sticky="w")
 
 
-    def _reload_users_into_combobox(self, combo: ttk.Combobox, var: tk.StringVar):
+    def _reload_users_into_listbox(self, listbox: tk.Listbox):
         users = self.db.get_users()
-        combo["values"] = users
-        if users:
-            combo.current(0)
-            var.set(users[0])
-        else:
-            var.set("")
-            combo.set("")
+        listbox.delete(0, tk.END)  # Clear the existing list
+        for user in users:
+            listbox.insert(tk.END, user)
+
 
     def confirm_delete_user_action(self):
-        name = self.user_var.get() if hasattr(self, "user_var") else ""
-        if not name:
+        selected_user = self.user_listbox.curselection()
+        if not selected_user:
             messagebox.showwarning("Fehler", "Bitte zuerst einen Nutzer auswählen.")
             return
 
+        name = self.user_listbox.get(selected_user)  # Get the selected user name
         if not messagebox.askyesno("Bestätigen", f"Nutzer '{name}' wirklich löschen?\n(Achtung: Fortschritte werden mit gelöscht.)"):
             return
 
@@ -296,12 +294,13 @@ class SportApp:
             self.current_user = None
             self.selected_user_var.set("") 
 
-        self._reload_users_into_combobox(self.user_dropdown, self.user_var)
+        self._reload_users_into_listbox(self.user_listbox)
 
         if deleted:
             messagebox.showinfo("Erfolg", f"Nutzer '{name}' wurde gelöscht.")
         else:
             messagebox.showinfo("Info", f"Kein Eintrag für '{name}' gefunden.")
+
 
     # ---------- Nutzer anzeigen / auswählen ----------
     def create_showUsers_view(self):
@@ -321,9 +320,6 @@ class SportApp:
         for u in users:
             self.users_listbox.insert(tk.END, u)
 
-        # # Buttons
-        # btn_frame = tk.Frame(self.user_frame)
-        # btn_frame.grid(row=2, column=0, pady=5)
 
         tk.Button(
             self.user_frame, text="Auswählen",
@@ -345,7 +341,7 @@ class SportApp:
         name = self.users_listbox.get(sel[0])
         self.current_user = name
         self.selected_user_var.set(name)
-        messagebox.showinfo("Aktueller Nutzer", f"Du hast '{name}' ausgewählt.")
+        # messagebox.showinfo("Aktueller Nutzer", f"Du hast '{name}' ausgewählt.")
         # (optional) Zur besseren UX zurück ins Nutzerverwaltungsmenü: 
         self.configure_user_frame()
 
@@ -369,8 +365,8 @@ class SportApp:
         user_list = self.db.get_users()
         user_filter_combo["values"] = user_list
         if user_list:
-            user_filter_combo.current(0)
-            filter_user_var.set(user_list[0])
+            user_filter_combo.current(0)  # Optional, falls der erste Benutzer vorausgewählt sein soll
+            filter_user_var.set(user_list[0])  # Optional, falls der erste Benutzer als Default gesetzt werden soll
         user_filter_combo.pack(side=tk.LEFT, padx=5)
 
         btn_filter = tk.Button(frame_filter, text="Laden", font=("Arial", 14),
@@ -390,11 +386,11 @@ class SportApp:
         tree.configure(yscrollcommand=vsb.set)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Erstes Laden
-        if user_list:
-            self.load_progress_data(tree, filter_user_var.get())
-        else:
-            messagebox.showinfo("Hinweis", "Noch keine Nutzer vorhanden.")
+        # Zunächst keine Daten im Treeview (lösche alle möglichen vorhandenen Daten)
+        tree.delete(*tree.get_children())
+
+        # Warten auf Benutzeraktion, um Daten zu laden
+        # Erste Daten werden erst durch Klicken auf den "Laden"-Button geladen
 
 
     def load_progress_data(self, tree: ttk.Treeview, selected_user: str):
@@ -454,13 +450,7 @@ class SportApp:
         self.button_voice_test = tk.Button(self.settings_frame, text="Anhören", font=(self.font_family, self.button_font_size), height=2, width=20, background="lightyellow",command=self.voice_test)
         self.button_voice_test.grid(row=4, column=2, pady=5, sticky="w")
 
-        # Visualisierung-Button
-        # self.button_visualize = tk.Button(self.settings_frame, text="Keypoints aus", font=(self.font_family, self.button_font_size), height=2, width=20, background="light yellow", command=self.toggle_visualize)
-        # self.button_visualize.grid(row=5, column=0, sticky="n", pady=5)
-
-        # Label für Info
-        #ttk.Label(self.settings_frame, text="Aktuell keine weiteren Optionen verfügbar.", font=(self.font_family, self.button_font_size)).grid(row=8, column=1, pady=5, sticky="w")
-        
+       
         # Zurück-Button
         self.button_back = tk.Button(self.settings_frame, text="Zurück", font=(self.font_family, self.button_font_size), height=2, width=20, background="lightblue",command=lambda: self.show_frame(self.main_menu_frame))
         self.button_back.grid(row=12, column=0, pady=200, sticky="w")
@@ -470,10 +460,9 @@ class SportApp:
         voice_name = str(self.voice_name.get())
         voice_model = str(self.voice_values.get(voice_name))
 
-        # print(f"Stimme gewählt: {voice_name}")
-        # print(f"Model gewählt: {voice_model}")
+     
         sprachausgabe.voice = PiperVoice.load(voice_model)
-        # print(f"Stimme von {voice_model} wurde geladen.")
+       
         logging.info(f"Stimme von {voice_model} wurde geladen.")
 
 
@@ -499,21 +488,7 @@ class SportApp:
         self.button_pause = tk.Button(self.exercise_frame, text="Pause", font=(self.font_family, self.button_font_size), height=2, width=20, background="light yellow", relief="raised", command=self.toggle_pause_button)
         self.button_pause.grid(row=1, column=0, sticky="n", pady=5, padx=5)
 
-        # # Zoom-Button
-        # self.zoom_slider = tk.Scale(self.exercise_frame,
-        #                             from_=1.0, to=2.0, resolution=0.1,
-        #                             orient="horizontal", label="Zoom Factor",
-        #                             length=300,              # Länge des Sliders (in Pixel)
-        #                             #width=30,                # Breite des Sliders
-        #                             sliderlength=50,         # Größe des Schiebereglers (Knopf)
-        #                             troughcolor="white",   # Farbe der Hintergrundrinne
-        #                             fg="black",              # Schriftfarbe
-        #                             bg="yellow",
-        #                             font=(self.font_family, self.button_font_size),
-        #                             command=self.set_zoom)
-        # self.zoom_slider.set(1.0)  # Startposition vom Slider
-        # self.zoom_slider.grid(row=1, column=0, sticky="n", pady=200, padx=5)
-        
+       
         self.zoom_button = tk.Button(self.exercise_frame,
                              text="Zoom aus",
                              font=(self.font_family, self.button_font_size),
@@ -733,24 +708,7 @@ class SportApp:
             # Plane die nächste Aktualisierung in 45ms
             self.window.after(45, self.periodic_update)
 
-    # 
-    # def _bind_user_to_all_exercises(self):
-    #     self.current_user = self.selected_user_var.get()
-    #     current_postop_day = self.selected_day.get()  # "Tag 1", "Tag 2", ...
-
-    #     for ex in [
-    #         self.halswirbelsaeule_exercise,
-    #         self.seitenheben_exercise,
-    #         self.abduktion_exercise,
-    #         self.flexion_schulter_exercise,
-    #         self.mobilisation_schulter_exercise,
-    #         self.butterfly_exercise,
-    #         self.rotation_exercise,
-    #         self.bizepscurls_exercise,
-    #     ]:
-    #         ex.current_user = self.current_user
-    #         ex.user_db = self.db
-    #         ex.postop_day = current_postop_day
+    #
 
     def _bind_user_to_all_exercises(self):
         # Nutzer bestimmen
@@ -929,8 +887,8 @@ class SportApp:
                 zoom = getattr(self, "zoom_level", 1.0)  # Falls kein Zoom-Level existiert, standard 1.0
                 frame = self.bild_operationen.apply_zoom(frame, zoom)
 
-                #frame = cv2.resize(frame, (800, 600))             # Bildgröße anpassen
-                frame = cv2.resize(frame, (1200, 900))             # Bildgröße anpassen
+                # frame = cv2.resize(frame, (1280, 960))          # Bildgröße anpassen -> 2x Kamerabild (640x480) passt nicht ins Programmfenster
+                frame = cv2.resize(frame, (1200, 900))            # Bildgröße anpassen
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)    # Frame konvertieren
                 img = Image.fromarray(frame)
                 imgtk = ImageTk.PhotoImage(image=img)

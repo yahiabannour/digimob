@@ -4,8 +4,8 @@
  brief:     Software zur Anzeigen die wichtigesten Daten z.B. Winkel, Armwiederholungen für alle Sportübungen auf ein fenster
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi, Mazen Al-Hakami
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.5
- date:      20.08.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs:
  ext. libs: Mediapipe (Version: 0.10.21)
@@ -53,14 +53,6 @@ class MediapipeModelle:
                     self.mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=2)
                 )
 
-        # Keypoints visualisieren
-        # if self.visualize_active:
-        #     if results.pose_landmarks:
-        #         self.mp_drawing.draw_landmarks(
-        #             image_zoomed, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
-        #             self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2),
-        #             self.mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=2)
-        #         )
             # Normalisierung der Keypoints
             normalized_pose = self.normalize_pose_landmarks(results)
 
@@ -76,33 +68,6 @@ class MediapipeModelle:
         # Erstellt Liste (x,y,z) aller 33 Pose-Landmarks
         keypoints = [(lm.x, lm.y, lm.z) for lm in results.pose_landmarks.landmark]
 
-        # # X-Koordinaten extrahieren
-        # x_coordinates = [x for x, _, _ in keypoints]
-        # # Y-Koordinaten extrahieren
-        # y_coordinates = [y for _, y, _ in keypoints]
-
-        # # Minimum und Maximum bestimmen (für x und y Koordinaten)
-        # # Wird benötigt um die Größe der BoundingBox zu berechnen (siehe unten)
-        # min_x, max_x = min(x_coordinates), max(x_coordinates)
-        # min_y, max_y = min(y_coordinates), max(y_coordinates)
-
-        # # Bounding Box mithilfe der ermittelten Werte berechnen
-        # # Die BoundingBox wird hier benötigt, um eine gute Referenzgröße für die Normierung zu haben
-        # bbox_width = max_x - min_x
-        # bbox_height = max_y - min_y
-
-        # # Falls die Bounding Box degeneriert (Breite oder Höhe = 0), überspringen
-        # if bbox_width == 0 or bbox_height == 0:
-        #     return []
-    
-        # # Keypoints normalisieren
-        # # ACHTUNG: Besonders ist auf die Normierung der Z-Koordinate (siehe unten) zu achten
-        # # Da Mediapipe die Z-Koordinaten nur schätzt, ist eine Normierung auf Wert/(z_max-z_min) nicht ratsam
-        # # Hier ist es besser auf die dominante Größe der BoundingBox zu normieren, damit der Referenzwert zuverlässig ist
-        # normalizedData = [
-        #     ((x - min_x) / bbox_width, (y - min_y) / bbox_height, z / max(bbox_width, bbox_height))
-        #     for x, y, z in keypoints
-        # ]
 
         # Normierung mit Mittelpunkt & globaler Skala
         x_coords = [x for x, y, z in keypoints]
@@ -186,34 +151,6 @@ class MediapipeModelle:
         # Erstellt Liste (x,y,z) aller 468 FaceMesh-Landmarks
         for face_landmarks in results.multi_face_landmarks:
             keypoints = [(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark]
-
-            # # X-Koordinaten extrahieren
-            # x_coordinates = [x for x, _, _ in keypoints]
-            # # Y-Koordinaten extrahieren
-            # y_coordinates = [y for _, y, _ in keypoints]
-
-            # # Minimum und Maximum bestimmen (für x und y Koordinaten)
-            # # Wird benötigt um die Größe der BoundingBox zu berechnen (siehe unten)
-            # min_x, max_x = min(x_coordinates), max(x_coordinates)
-            # min_y, max_y = min(y_coordinates), max(y_coordinates)
-
-            # # Bounding Box mithilfe der ermittelten Werte berechnen
-            # # Die BoundingBox wird hier benötigt, um eine gute Referenzgröße für die Normierung zu haben
-            # bbox_width = max_x - min_x
-            # bbox_height = max_y - min_y
-
-            # # Falls die Bounding Box degeneriert (Breite oder Höhe = 0), überspringen
-            # if bbox_width == 0 or bbox_height == 0:
-            #     continue
-        
-            # # Keypoints normalisieren
-            # # ACHTUNG: Besonders ist auf die Normierung der Z-Koordinate (siehe unten) zu achten
-            # # Da Mediapipe die Z-Koordinaten nur schätzt, ist eine Normierung auf Wert/(z_max-z_min) nicht ratsam
-            # # Hier ist es besser auf die dominante Größe der BoundingBox zu normieren, damit der Referenzwert zuverlässig ist
-            # normalizedData = [
-            #     ((x - min_x) / bbox_width, (y - min_y) / bbox_height, z / max(bbox_width, bbox_height))
-            #     for x, y, z in keypoints
-            # ]
 
                 # Normierung mit Mittelpunkt & globaler Skala
             x_coords = [x for x, y, z in keypoints]

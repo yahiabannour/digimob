@@ -4,8 +4,8 @@
  brief:     Software zur Anzeige der wichtigsten Daten im Videobild, z.B. Winkel, Wiederholungen für alle Sportübungen
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.4
- date:      09.05.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs:
  ext. libs: OpenCV (Version: 4.10.0.84)
@@ -25,16 +25,16 @@ class Bildoperationen:
     Modes: 'facemesh' oder 'posemesh'.
     """
     def __init__(self, resolution, cap,
-                 mode='facemesh',                   # kann facemesh oder posemesh wie gewünscht sein
-                #  mode='posemesh',
-                 smooth_alpha=0.1,
+                #  mode='facemesh',                   # kann facemesh oder posemesh wie gewünscht sein
+                 mode='posemesh',
+                 smooth_factor=0.2,
                  init_zoom=1.0,
                  max_zoom=3.0,
                  ):
         self.resolution = resolution
         self.cap = cap
         self.mode = mode  # 'facemesh' | 'posemesh'
-        self.smooth_alpha = float(smooth_alpha)
+        self.smooth_factor = float(smooth_factor)
         self.zoom_factor = float(init_zoom)   # bleibt erhalten
         self.max_zoom = float(max_zoom)
         
@@ -119,31 +119,10 @@ class Bildoperationen:
         image_mediapipe = cv2.cvtColor(image_zoomed, cv2.COLOR_BGR2RGB)
         return image_zoomed, image_mediapipe
 
-    # def apply_zoom(self, frame, zoom_factor, center=None):
-        
-    #     if zoom_factor <= 1.0:
-    #         return frame
-
-    #     h, w = frame.shape[:2]
-    #     if center is None:
-    #         center_x, center_y = w // 2, h // 2
-    #     else:
-    #         center_x, center_y = center
-
-    #     zoom_w = int(w / zoom_factor)
-    #     zoom_h = int(h / zoom_factor)
-
-    #     x1 = max(center_x - zoom_w // 2, 0)
-    #     y1 = max(center_y - zoom_h // 2, 0)
-    #     x2 = min(center_x + zoom_w // 2, w)
-    #     y2 = min(center_y + zoom_h // 2, h)
-
-    #     cropped = frame[y1:y2, x1:x2]
-    #     return cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LINEAR)
 
     def apply_zoom(self, frame, zoom_factor, center=None):
         """
-        Verbessertes Zoom:
+        Verbessertes Zoom mit EMA-Funktion:
         - hält immer das Seitenverhältnis des Frames
         - verschiebt das Zentrum automatisch so, dass der Crop vollständig im Bild liegt
         - vermeidet "komisches" Cropping am Rand
@@ -195,12 +174,12 @@ class Bildoperationen:
         return cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
-    # neue Funktionen zur Glättung und BoundingBox
+    # neue Funktionen zur Glättung und BoundingBox --> EMA-Funktion
     def _smooth(self, cx, cy, cw, ch):
         if self._prev_cx is None:
             self._prev_cx, self._prev_cy, self._prev_cw, self._prev_ch = cx, cy, cw, ch
         else:
-            a = self.smooth_alpha
+            a = self.smooth_factor
             self._prev_cx = int((1 - a) * self._prev_cx + a * cx)
             self._prev_cy = int((1 - a) * self._prev_cy + a * cy)
             self._prev_cw = int((1 - a) * self._prev_cw + a * cw)

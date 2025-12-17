@@ -4,8 +4,8 @@
  brief:     Software zur Bestimmung und Zählen von Armbewegungen für die Sportübung Rotation
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.5
- date:      01.09.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs: time
  ext. libs: 
@@ -90,19 +90,7 @@ class RotationExercise:
 
         if results.pose_landmarks:
             try:
-                # rohe Daten
-                # landmarks = results.pose_landmarks.landmark
-                # shoulder_left = [landmarks[11].x, landmarks[11].y]
-                # elbow_left = [landmarks[13].x, landmarks[13].y]
-                # hip_left = [landmarks[23].x, landmarks[23].y]
-
-                # shoulder_right = [landmarks[12].x, landmarks[12].y]
-                # elbow_right = [landmarks[14].x, landmarks[14].y]
-                # hip_right = [landmarks[24].x, landmarks[24].y]
-
-                # self.wrist_left = [landmarks[15].x, landmarks[15].y]
-                # self.wrist_right = [landmarks[16].x, landmarks[16].y]
-
+                
                 # normalisierte Daten holen
                 norm_points = normalized_pose[0]
 
@@ -121,12 +109,6 @@ class RotationExercise:
                 
                 self.angle_shoulder_left = calculate_angle(hip_left, shoulder_left, elbow_left)     
                 self.angle_shoulder_right = calculate_angle(hip_right, shoulder_right, elbow_right)
-
-                # print(f"elbow distance = {self.elbows_distance}")       
-                # print(f"wrist distance = {self.wrists_distance}")
-
-                # print(f"angle left shoulder = {self.angle_shoulder_left}")       
-                # print(f"angle right shoulder = {self.angle_shoulder_right}")
 
                 
                 self.update_counters()
@@ -184,21 +166,7 @@ class RotationExercise:
             self.sprach_ausgabe.repetitions = self.repetitions
             self.sprach_ausgabe.speak()
         
-        # Sportübung unterbrechen
-        """
-        if self.counter_started and ((self.angle_shoulder_left < 40 and self.angle_shoulder_right > 60) or (self.angle_shoulder_left > 60 and self.angle_shoulder_right < 60)):
-            if self.exercise_cancel_time is None:
-                self.exercise_cancel_time = time.time()
-            elif time.time() - self.exercise_cancel_time >= 3:
-                self.message = "Übung unterbrochen"
-                if self.wait_1 == 1:
-                    self.sprach_ausgabe.activate_thread ("Die Übung wurde unterbrochen.")
-                    self.wait_1 += 1
-                self.exercise_completed = True
-        else:
-            self.exercise_cancel_time = None
-        """
-
+        
             
     def balken(self):
         if self.counter_started == True:

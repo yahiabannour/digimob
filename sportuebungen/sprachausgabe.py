@@ -4,8 +4,8 @@
  brief:     Software zur Sprachausgabe
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.4
- date:      09.05.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (3.11.2)
  int. libs: threading, io, wave
  ext. libs: sounddevice (0.5.1)

@@ -4,8 +4,8 @@
  brief:     Software zur Bestimmung und Zählung von Kopfbewegungen für die Sportübung Halswirbelsäule
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.5
- date:      01.09.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs: time
  ext. libs: 
@@ -91,10 +91,6 @@ class HalswirbelsaeuleExercise:
                 self.horizontal_inclination = self.calculate_angle(face_landmarks.landmark, image_width)
                 self.update_counters()
 
-        # if results.pose_landmarks:
-        #     image_height, image_width, _ = image_BGR.shape
-        #     self.horizontal_inclination = self.calculate_angle(results.pose_landmarks.landmark, image_width)
-        #     self.update_counters()
 
         
         counter_left = self.repetitions - self.counter_left
@@ -154,21 +150,7 @@ class HalswirbelsaeuleExercise:
             self.sprach_ausgabe.repetitions = self.repetitions
             self.sprach_ausgabe.speak()
 
-        # Sportübung unterbrechen
-        """
-        if self.counter_started and (self.horizontal_inclination < self.negative_horizontal_inclination_max or self.horizontal_inclination > self.positive_horizontal_inclination_max):
-            if self.exercise_cancel_time is None:
-                self.exercise_cancel_time = time.time()  
-            elif time.time() - self.exercise_cancel_time >= 3:
-                self.message = "Uebung unterbrochen"
-                if self.wait_1 == 1:
-                    self.sprach_ausgabe.activate_thread ("Die Übung wurde unterbrochen.")
-                    self.wait_1 += 1
-                self.exercise_completed = True
-        else:
-            self.exercise_cancel_time = None
-        """
-    
+        
 
     def calculate_angle(self, landmarks, image_width):
         """Berechnet den horizontalen Kopfneigungswinkel."""
@@ -177,19 +159,14 @@ class HalswirbelsaeuleExercise:
         right_eye = landmarks[263]
         nose_tip = landmarks[1]
 
-        # mit Pose-Landmarks
-        # left_eye = landmarks[3]
-        # right_eye = landmarks[6]
-        # nose_tip = landmarks[0]
+        
 
         left_eye_x = left_eye.x * image_width
         right_eye_x = right_eye.x * image_width
         nose_tip_x = nose_tip.x * image_width
 
-        #print(f"left eye :{left_eye_x}; right eye :{right_eye_x}; nose tip :{nose_tip_x} ")
-
         horizontal_inclination_x = nose_tip_x - (left_eye_x + right_eye_x) / 2
-        # print (f"horizontal inclination x:{horizontal_inclination_x}")
+        
         return horizontal_inclination_x
     
     

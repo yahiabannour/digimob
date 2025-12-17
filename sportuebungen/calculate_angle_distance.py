@@ -4,8 +4,8 @@
  brief:     Software zur Berechnung von Winkel zwischen 3 Keypointer und Abstand zwischen 2 Keypointer 
  author(s): Ezaldeen Al-Shahethi, Abdulatif Mujali, Jörg Schneider
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.3
- date:      17.04.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs: 
  ext. libs: Numpy (Version: 1.26.4)

@@ -4,8 +4,8 @@
  brief:     Software zur Anzeige der Logging-Dateien
  author(s): Tobias Hertzler, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   
- date:      09,07,2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.11.2)
  int. libs:
  ext. libs: OpenCV (Version: 4.10.0.84)

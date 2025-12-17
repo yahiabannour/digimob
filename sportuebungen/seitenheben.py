@@ -4,8 +4,8 @@
  brief:     Software zur Bestimmung und Zählen von Armbewegungen für die Sportübung Seitheben
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.5
- date:      01.09.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs: time
  ext. libs:
@@ -80,10 +80,7 @@ class SeitenhebenExercise:
             # results, image_BGR = self.mediapipe_modelle.whole_body_recognition()
             results, image_zoomed, normalized_pose = self.mediapipe_modelle.whole_body_recognition()
 
-            # if results is None or image_BGR is None:
-            #     print("Kamera konnte kein Bild erfassen.")
-            #     return
-            
+                        
             
             if results is None or image_zoomed is None:
                 print("Kamera konnte kein Bild erfassen.")
@@ -95,20 +92,20 @@ class SeitenhebenExercise:
 
             if results.pose_landmarks:
                 try:
-                    landmarks = results.pose_landmarks.landmark
-                    shoulder_left = [landmarks[11].x, landmarks[11].y]
-                    elbow_left = [landmarks[13].x, landmarks[13].y]
-                    hip_left = [landmarks[23].x, landmarks[23].y]
+                    
+                    # normalisierte Daten holen
+                    norm_points = normalized_pose[0]
 
-                    shoulder_right = [landmarks[12].x, landmarks[12].y]
-                    elbow_right = [landmarks[14].x, landmarks[14].y]
-                    hip_right = [landmarks[24].x, landmarks[24].y]
+                    shoulder_left   = [norm_points[11][0], norm_points[11][1]]
+                    elbow_left      = [norm_points[13][0], norm_points[13][1]]
+                    hip_left        = [norm_points[23][0], norm_points[23][1]]
+
+                    shoulder_right  = [norm_points[12][0], norm_points[12][1]]
+                    elbow_right     = [norm_points[14][0], norm_points[14][1]]
+                    hip_right       = [norm_points[24][0], norm_points[24][1]]
 
                     self.angle_shoulder_left = calculate_angle(hip_left, shoulder_left, elbow_left)
                     self.angle_shoulder_right = calculate_angle(hip_right, shoulder_right, elbow_right)
-
-                    # print(f"angle left shoulder = {self.angle_shoulder_left}")       
-                    # print(f"angle right shoulder = {self.angle_shoulder_right}")
 
                     # Update Zähler- und Statuslogik
                     self.update_counters()
@@ -127,14 +124,7 @@ class SeitenhebenExercise:
                 self.message
             )
 
-            # frame = self.bild_operationen.show_exercise_details(
-            #     self.sport_exercise_name, image_BGR, 
-            #     self.angle_shoulder_left, self.angle_shoulder_right, 
-            #     counter_left, counter_right, 
-            #     self.stage_left, self.stage_right, 
-            #     self.message
-            # )
-
+            
             if self.sport_exercise_example == 1:
                 return frame ,self.program_end
     
@@ -176,20 +166,7 @@ class SeitenhebenExercise:
             self.sprach_ausgabe.speak()
 
 
-        # Sportübung unterbrechen
-        """
-        if self.counter_started and ((self.angle_shoulder_left < 40 and self.angle_shoulder_right > 60) or (self.angle_shoulder_left > 60 and self.angle_shoulder_right < 40)):
-            if self.exercise_cancel_time is None:
-                self.exercise_cancel_time = time.time()
-            elif time.time() - self.exercise_cancel_time >= 3:
-                self.message = "Uebung unterbrochen"
-                if self.wait_1 == 1:
-                    self.sprach_ausgabe.activate_thread ("Die Übung wurde unterbrochen.")
-                    self.wait_1 += 1
-                self.exercise_completed = True
-        else:
-            self.exercise_cancel_time = None
-        """
+        
 
     
     def balken(self):

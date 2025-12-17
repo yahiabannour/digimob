@@ -4,8 +4,8 @@
  brief:     Software zur Kamerakonfiguration
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.4
- date:      09.05.2025
+ version:   1.1.8
+ date:      10.12.2025
  software:  Python (Version: 3.9.2)
  int. libs:
  ext. libs: OpenCV (Version: 4.11.0)
