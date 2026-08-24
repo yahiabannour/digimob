@@ -8,7 +8,7 @@
  date:      10.12.2025
  software:  Python (Version: 3.12.3)
  int. libs:
- ext. libs: OpenCV (Version: 4.10.0.84)
+ ext. libs: OpenCV (Version: 4.10.0.84), Mediapipe (Version: 1.0.1, Tasks-API)
  hardware:
  info:
 ******************************************************************************
@@ -16,7 +16,7 @@
 
 import cv2
 import numpy as np
-import mediapipe as mp
+import mediapipe_tasks_compat as mp_tasks
 
 class Bildoperationen:
     """
@@ -45,23 +45,16 @@ class Bildoperationen:
         self._prev_cw = None
         self._prev_ch = None
 
-        # MediaPipe initialisieren
-        self._mp_face_mesh = mp.solutions.face_mesh
-        self._mp_pose = mp.solutions.pose
-        self._mp_draw = mp.solutions.drawing_utils
-        self._mp_style = mp.solutions.drawing_styles
+        # MediaPipe initialisieren (Tasks-API)
+        self._mp_draw = mp_tasks.drawing_utils
+        self._mp_style = mp_tasks.drawing_styles
 
-        self._face_mesh = self._mp_face_mesh.FaceMesh(
-            static_image_mode=False,
+        self._face_mesh = mp_tasks.FaceTask(
             max_num_faces=1,
-            refine_landmarks=True,
             min_detection_confidence=0.6,
             min_tracking_confidence=0.5
         )
-        self._pose = self._mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            enable_segmentation=False,
+        self._pose = mp_tasks.PoseTask(
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
@@ -241,8 +234,11 @@ class Bildoperationen:
         nx, ny = to_px(lms[NOSE])
 
         le, re = lms[LEFT_EAR], lms[RIGHT_EAR]
-        le_vis = getattr(le, 'visibility', 1.0) > 0.5
-        re_vis = getattr(re, 'visibility', 1.0) > 0.5
+        def visible(lm):
+            v = getattr(lm, 'visibility', None)
+            return True if v is None else v > 0.5
+        le_vis = visible(le)
+        re_vis = visible(re)
         if le_vis and re_vis:
             lex, ley = to_px(le); rex, rey = to_px(re)
             head_w = int(max(20, np.hypot(lex - rex, ley - rey)))
