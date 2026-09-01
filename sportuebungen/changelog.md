@@ -12,6 +12,44 @@
 
 ---
 
+## [1.1.9] 2026-09-01
+
+### Fixed
+- sprachausgabe.py: TTS was completely silent (every `speak()` raised
+  `wave.Error: # channels not specified`). Rewrote `speak()` for the piper-tts 1.7.0
+  API: iterate the `AudioChunk`s from `voice.synthesize(text)`, concatenate their
+  `audio_int16_array`, play at `sample_rate` via sounddevice. Dropped the unused
+  `wave` / `io.BytesIO` imports.
+
+### Changed
+- Hauptmenü: moved "Übungen wählen" (grid row 2 -> 7) and "Bedienungsanleitung"
+  (row 3 -> 8) further down the page
+- moved the Thorsten voice model into a subfolder: `stimmen/de_DE-thorsten-low.onnx`
+  (+ `.onnx.json`); updated the paths in sprachausgabe.py and Hauptprogramm.py
+- exercises now start without selecting a user: a fixed default user "Gast" is
+  created at startup and used for all progress saving; removed the "Bitte zuerst
+  einen Nutzer auswaehlen" gates in `start_exercise_menu()` and
+  `_bind_user_to_all_exercises()`
+
+### Removed
+- deleted all TTS voices except Thorsten (Eva, Kerstin, Ramona, Karlsson, Pavoque,
+  MLS -- 12 files)
+- Hauptmenü: removed the "Einstellungen" and "Nutzerverwaltung" buttons
+- Einstellungen: removed the voice-selection dropdown, the "Anhören" test button,
+  and the `voice_changed()` / `voice_test()` methods (page now holds only a back
+  button)
+- removed the entire Nutzerverwaltung code from Hauptprogramm.py (~244 lines):
+  `user_frame`, `configure_user_frame`, add/delete/select-user views,
+  `show_progress_window`, `load_progress_data` and the related helper methods and
+  StringVars. `user_database.py` is unchanged; its `delete_user`, `get_users` and
+  `get_exercise_days_with_date` are now unused.
+
+### ToDo
+- scale the program window, menues, font sizes, video frames etc. to the screen resolution
+- check the calculation of arm and body positions for proper training movements
+
+---
+
 ## [1.1.8] 2025-12-17
 
 ### Changed

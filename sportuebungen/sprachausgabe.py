@@ -21,7 +21,7 @@ from piper import PiperVoice
 
 
 # Set default voice (same as in 'Hauptprogramm.py', otherwise Visual Studio Code shows: 'voice' is undefined variable)
-default_voice_model = "de_DE-thorsten-low.onnx"
+default_voice_model = "stimmen/de_DE-thorsten-low.onnx"
 voice = PiperVoice.load(default_voice_model)
 
 
