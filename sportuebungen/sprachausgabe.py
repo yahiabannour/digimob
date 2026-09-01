@@ -7,19 +7,17 @@
  version:   1.1.8
  date:      10.12.2025
  software:  Python (3.11.2)
- int. libs: threading, io, wave
+ int. libs: threading
  ext. libs: sounddevice (0.5.1)
             numpy (1.26.4)
-            piper-tts (1.2.0)            
+            piper-tts (1.7.0)
  info:      using Lock() to avoid overlapping tts-voice with program crash
 ******************************************************************************
 """
 import numpy as np
 import sounddevice as sd
 import threading
-import wave
 from piper import PiperVoice
-from io import BytesIO
 
 
 # Set default voice (same as in 'Hauptprogramm.py', otherwise Visual Studio Code shows: 'voice' is undefined variable)
@@ -36,16 +34,12 @@ audio_lock = threading.Lock()
 def speak(voice, text):
     # Synthetisiert Sprache mit Piper und spielt sie ab.
     with audio_lock:
-        with BytesIO() as wav_stream:
-            with wave.open(wav_stream, 'wb') as wav_file:
-                voice.synthesize(text, wav_file)
+        chunks = list(voice.synthesize(text))
+        if not chunks:
+            return
 
-            wav_stream.seek(0)
-
-            with wave.open(wav_stream, 'rb') as wav_file:
-                frames = wav_file.readframes(wav_file.getnframes())
-                audio_data = np.frombuffer(frames, dtype=np.int16)
-                samplerate = wav_file.getframerate()
+        audio_data = np.concatenate([chunk.audio_int16_array for chunk in chunks])
+        samplerate = chunks[0].sample_rate
 
         sd.play(audio_data, samplerate)
         sd.wait()
