@@ -43,6 +43,15 @@
   `show_progress_window`, `load_progress_data` and the related helper methods and
   StringVars. `user_database.py` is unchanged; its `delete_user`, `get_users` and
   `get_exercise_days_with_date` are now unused.
+- deleted `user_database.py` and progress persistence entirely: the app no longer
+  saves or reads exercise progress. Removed `user_db`/`current_user`/`postop_day`
+  params and the `save_progress()` calls from all 8 exercise classes
+  (`abduktion.py`, `seitenheben.py`, `bizepscurls.py`, `flexion_schulter.py`,
+  `halswirbelsaeule.py`, `rotation.py`, `butterfly.py`, `mobilisation_schulter.py`),
+  the `UserDatabase` import/instantiation and `_bind_user_to_all_exercises()` from
+  `Hauptprogramm.py`, and the checked-in `users.db` / `Benutzerdaten/` database
+  files. The "Tag nach OP" dropdown is unaffected -- it still sets rep counts,
+  it just no longer gets recorded anywhere.
 
 ### ToDo
 - scale the program window, menues, font sizes, video frames etc. to the screen resolution

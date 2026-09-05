@@ -41,7 +41,6 @@ from rotation import RotationExercise
 from seitenheben import	SeitenhebenExercise
 import logging
 from logger import LoggingConfigurator
-from user_database import UserDatabase
 
 
 class SportApp:
@@ -61,14 +60,6 @@ class SportApp:
 
         # Standard-Wert für Zoom-Funktion
         self.zoom_factor = 1.0
-
-        self.db = UserDatabase("users.db")
-        # Keine Nutzerverwaltung mehr: fester Standardnutzer, damit Fortschritte
-        # trotzdem gespeichert werden koennen und die Uebungen direkt starten.
-        self.default_user = "Gast"
-        self.db.add_user(self.default_user)  # legt an, falls noch nicht vorhanden
-        self.current_user = self.default_user
-
 
         # Frames erstellen
         self.create_frame()
@@ -126,14 +117,14 @@ class SportApp:
         self.bild_operationen.zoom_factor = self.zoom_factor
 
         self.mediapipe_modelle = MediapipeModelle (self.bild_operationen)
-        self.abduktion_exercise = AbduktionExercise (self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.seitenheben_exercise = SeitenhebenExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.bizepscurls_exercise = BizepscurlsExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.flexion_schulter_exercise =Flexion_SchulterbenExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.halswirbelsaeule_exercise = HalswirbelsaeuleExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.rotation_exercise = RotationExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.butterfly_exercise = ButterflyExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
-        self.mobilisation_schulter_exercise = Mobilisation_SchulterExercise(self.mediapipe_modelle, self.bild_operationen, self.db, self.current_user, repetitions=self.reps.get())
+        self.abduktion_exercise = AbduktionExercise (self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.seitenheben_exercise = SeitenhebenExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.bizepscurls_exercise = BizepscurlsExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.flexion_schulter_exercise =Flexion_SchulterbenExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.halswirbelsaeule_exercise = HalswirbelsaeuleExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.rotation_exercise = RotationExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.butterfly_exercise = ButterflyExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
+        self.mobilisation_schulter_exercise = Mobilisation_SchulterExercise(self.mediapipe_modelle, self.bild_operationen, repetitions=self.reps.get())
 
 
     # Hauptansicht konfigurieren
@@ -413,36 +404,6 @@ class SportApp:
 
     #
 
-    def _bind_user_to_all_exercises(self):
-        # Nutzer bestimmen
-        user = getattr(self, "current_user", None) or getattr(self, "default_user", "Gast")
-
-        # Post-OP-Tag bestimmen
-        current_postop_day = getattr(self, "selected_day", None)
-        if current_postop_day:
-            current_postop_day = current_postop_day.get()
-        else:
-            current_postop_day = None
-
-        # Alle Übungen binden
-        for ex in [
-            self.halswirbelsaeule_exercise,
-            self.seitenheben_exercise,
-            self.abduktion_exercise,
-            self.flexion_schulter_exercise,
-            self.mobilisation_schulter_exercise,
-            self.butterfly_exercise,
-            self.rotation_exercise,
-            self.bizepscurls_exercise,
-        ]:
-            ex.current_user = user
-            ex.user_db = self.db
-            ex.postop_day = current_postop_day
-
-        self.current_user = user  # falls aus Legacy-Var übernommen
-        return True
-
-
 
     def save_selection_belly(self):
         # Ausgewählte Optionen speichern
@@ -455,7 +416,6 @@ class SportApp:
         
         # Wechsle zum Übungsfenster
         if self.exercises_queue:
-            self._bind_user_to_all_exercises()
             self.show_frame(self.exercise_frame) 
             self.current_exercise_index = 0
             self.running = True
@@ -474,7 +434,6 @@ class SportApp:
 
         # Wechsle zum Übungsfenster
         if self.exercises_queue:
-            self._bind_user_to_all_exercises()
             self.show_frame(self.exercise_frame) 
             self.current_exercise_index = 0
             self.running = True
@@ -513,7 +472,6 @@ class SportApp:
             self.butterfly_exercise.start_butterfly_exercise,
             self.rotation_exercise.start_rotation_exercise
         ]
-        self._bind_user_to_all_exercises()
         self.show_frame(self.exercise_frame)
         self.current_exercise_index = 0
         self.running = True
@@ -534,7 +492,6 @@ class SportApp:
             self.rotation_exercise.start_rotation_exercise,
             self.bizepscurls_exercise.start_bizepscurls_exercise
         ]
-        self._bind_user_to_all_exercises()
         self.show_frame(self.exercise_frame) 
         self.current_exercise_index = 0
         self.running = True
@@ -619,8 +576,6 @@ class SportApp:
         ]:
             exercise.__init__(self.mediapipe_modelle,
             self.bild_operationen,
-            self.db,
-            self.current_user,
             repetitions=self.reps.get()
         )
     

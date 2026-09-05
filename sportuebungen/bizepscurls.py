@@ -17,12 +17,9 @@ from calculate_angle_distance import calculate_angle
 from sprachausgabe import SprachAusgabe
 
 class BizepscurlsExercise:
-    def __init__ (self, mediapipe_modelle, bild_operationen, user_db, current_user, repetitions=5):
+    def __init__ (self, mediapipe_modelle, bild_operationen, repetitions=5):
         self.mediapipe_modelle = mediapipe_modelle
         self.bild_operationen = bild_operationen
-
-        self.user_db = user_db             # Datenbankobjekt
-        self.current_user = current_user   # aktuell ausgewählter Nutzer
 
         self.counter_left = 0
         self.counter_right = 0
@@ -157,13 +154,6 @@ class BizepscurlsExercise:
                     self.message = "Prima, gute Leistung!"
                     self.exercise_completed = True
 
-                    # nur speichern, wenn Nutzer gesetzt
-                if self.current_user:
-                    self.user_db.save_progress(
-                        user_name=self.current_user,
-                        exercise_name=self.sport_exercise_name,
-                        postop_day=getattr(self, "postop_day", None)  # z.B. "Tag 2"
-                    )
                 else:
                     self.message = f"Super, versuchen Sie {self.repetitions} mal zu schaffen!"
             
