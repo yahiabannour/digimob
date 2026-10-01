@@ -1,2 +1,14 @@
 __pycache__
 Log.log
+.venv/
+sportuebungen/recordings/**/*.mp4
+sportuebungen/recordings/**/*.webm
+.pytest_cache/
+.mcp.json
+sportuebungen/models/pose_landmarker_lite.task
+sportuebungen/models/pose_landmarker_heavy.task
+sportuebungen/demos/*.blend*
+sportuebungen/demos/assets/
+sportuebungen/videos/
+sportuebungen/.playwright-mcp/
+.claude/

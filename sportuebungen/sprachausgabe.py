@@ -11,25 +11,21 @@
  ext. libs: sounddevice (0.5.1)
             numpy (1.26.4)
             piper-tts (1.7.0)
- info:      using Lock() to avoid overlapping tts-voice with program crash
+ info:      using Lock() to avoid overlapping tts-voice with program crash.
+            Die Stimme wird einmal geladen, wenn die App ihre SprachAusgabe erzeugt.
 ******************************************************************************
 """
+import threading
+
 import numpy as np
 import sounddevice as sd
-import threading
 from piper import PiperVoice
 
-
-# Set default voice (same as in 'Hauptprogramm.py', otherwise Visual Studio Code shows: 'voice' is undefined variable)
-default_voice_model = "stimmen/de_DE-thorsten-low.onnx"
-voice = PiperVoice.load(default_voice_model)
-
-
-def load_voice(voice_model_name):
-    # Lädt das Piper-Stimmenmodell.
-    return PiperVoice.load(voice_model_name)
+# Pfad relativ zum Arbeitsverzeichnis: die App laeuft aus sportuebungen/
+VOICE_MODEL = "stimmen/de_DE-thorsten-low.onnx"
 
 audio_lock = threading.Lock()
+
 
 def speak(voice, text):
     # Synthetisiert Sprache mit Piper und spielt sie ab.
@@ -46,36 +42,37 @@ def speak(voice, text):
 
 
 class SprachAusgabe:
-    def __init__(self):
-        self.total_repetitions = 0
-        self.repetitions = 0
-        self.executed = set()  # Speichert bereits gesprochene Nachrichten
-        self.lock = threading.Lock()
+    def __init__(self, voice_model=VOICE_MODEL):
+        self.voice = PiperVoice.load(voice_model)
+        self.reset()
 
+    def reset(self):
+        # Vor jeder Uebung: jede Meldung wird pro Uebung nur einmal gesprochen
+        self.executed = set()
 
-    def activate_thread(self, message):
-        threading.Thread(target=speak, args=(voice, message)).start()
+    def say(self, message):
+        # Eigener Thread, damit die Bildverarbeitung waehrend der Ansage weiterlaeuft
+        threading.Thread(target=speak, args=(self.voice, message)).start()
 
+    def milestones(self, total_repetitions, repetitions):
+        remaining = repetitions - total_repetitions
 
-    def speak(self):
-        remaining = self.repetitions - self.total_repetitions
-
-        if self.total_repetitions == 0 and "start" not in self.executed:
-            self.activate_thread(f"Super, versuchen Sie {self.repetitions} Wiederholungen zu schaffen")
+        if total_repetitions == 0 and "start" not in self.executed:
+            self.say(f"Super, versuchen Sie {repetitions} Wiederholungen zu schaffen")
             self.executed.add("start")
 
-        elif self.total_repetitions >= self.repetitions / 2 and "halfway" not in self.executed:
-            self.activate_thread("Super, die Hälfte ist geschafft")
+        elif total_repetitions >= repetitions / 2 and "halfway" not in self.executed:
+            self.say("Super, die Hälfte ist geschafft")
             self.executed.add("halfway")
 
-        elif remaining > 0 and remaining not in self.executed and not self.total_repetitions == 0:
+        elif remaining > 0 and remaining not in self.executed and not total_repetitions == 0:
             if remaining == 1:
-                self.activate_thread("Letzte Wiederholung")
+                self.say("Letzte Wiederholung")
                 self.executed.add(remaining)
             elif remaining > 1:
-                self.activate_thread(f"noch {remaining}")
+                self.say(f"noch {remaining}")
                 self.executed.add(remaining)
 
         elif remaining <= 0 and "done" not in self.executed:
-            self.activate_thread(f"Tolle Arbeit! Sie haben alle {self.repetitions} Wiederholungen geschafft")
+            self.say(f"Tolle Arbeit! Sie haben alle {repetitions} Wiederholungen geschafft")
             self.executed.add("done")

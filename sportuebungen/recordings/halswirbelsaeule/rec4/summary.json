@@ -1,0 +1,24 @@
+{
+  "exercise": "halswirbelsaeule",
+  "expected_reps": 0,
+  "expected_per_side": {
+    "left": 1,
+    "right": 0
+  },
+  "started_at": "2026-09-29T12:28:52",
+  "pose_model": "full",
+  "video": "video.mp4",
+  "keypoints": "keypoints_full.jsonl",
+  "camera": {
+    "index": 0,
+    "name": "Integrated_Webcam_HD: Integrate"
+  },
+  "resolution": [
+    640,
+    480
+  ],
+  "fps_target": 30.08,
+  "measured_fps": 30.09,
+  "frames_recorded": 66,
+  "frames_with_pose": 65
+}

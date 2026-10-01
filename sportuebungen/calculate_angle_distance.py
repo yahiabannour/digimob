@@ -40,3 +40,12 @@ def calculate_distance(landmark_1, landmark_2):
     joint_a = np.array(landmark_1)                  # Konvertiert landmark_1 in ein NumPy-Array
     joint_b = np.array(landmark_2)                 # Konvertiert landmark_2 in ein NumPy-Array
     return np.linalg.norm(joint_a - joint_b)   # Berechnet die euklidische Distanz
+
+
+# Funktion zur Berechnung des Fortschritts (0..1) eines Messwerts vom Startwert (0) zum Zielwert (1),
+# z.B. für den Fortschrittsbalken. Der Zielwert darf auch kleiner als der Startwert sein.
+def calculate_progress(value, start_value, target_value):
+    if target_value == start_value:                 # Kein Bereich vorhanden (z.B. noch keine Messwerte)
+        return 0.0
+    progress = (value - start_value) / (target_value - start_value)
+    return float(np.clip(progress, 0.0, 1.0))       # Auf den Bereich 0..1 begrenzen

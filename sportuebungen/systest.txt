@@ -1,0 +1,67 @@
+# Systemtest (systest.py, Aufruf aus sportuebungen/: pytest): Der Test spielt die hier
+# eingetragenen Keypoints in die jeweilige Uebung und vergleicht die gezaehlten Wiederholungen
+# mit der Ground Truth. Ohne Kamera, Video, Fenster und Sprachausgabe.
+#
+# Eine Keypoints-Datei pro Zeile (Pfad relativ zu sportuebungen/), Zeilen mit # werden
+# uebersprungen. Uebung und Ground Truth (expected_reps) kommen aus der summary.json daneben,
+# also nur Aufnahmen von tools/record_exercise.py:
+#   recordings/<uebung>/rec<N>/keypoints_<modell>.jsonl
+#
+# Gezaehlt werden muss genau expected_reps, sonst faellt der Test durch. Eine Aufnahme, in der
+# die Uebung zu Recht anders zaehlt (z.B. zu kurz vor der ersten Wiederholung), gehoert deshalb
+# nicht in diese Liste. Diese Datei ist unabhaengig von videomodus.txt ("Aufnahmen testen").
+
+recordings/halswirbelsaeule/rec1/keypoints_full.jsonl
+
+recordings/halswirbelsaeule/rec2/keypoints_full.jsonl
+
+recordings/halswirbelsaeule/rec3/keypoints_full.jsonl
+
+recordings/halswirbelsaeule/rec4/keypoints_full.jsonl
+
+
+recordings/bizepscurls/rec1/keypoints_full.jsonl
+
+recordings/bizepscurls/rec2/keypoints_full.jsonl
+
+recordings/bizepscurls/rec3/keypoints_full.jsonl
+
+recordings/bizepscurls/rec4/keypoints_full.jsonl
+
+#recordings/bizepscurls/rec5/keypoints_full.jsonl
+#recordings/bizepscurls/rec6/keypoints_full.jsonl
+#recordings/bizepscurls/rec7/keypoints_full.jsonl
+
+recordings/abduktion/rec1/keypoints_full.jsonl
+
+recordings/abduktion/rec2/keypoints_full.jsonl
+
+recordings/abduktion/rec3/keypoints_full.jsonl
+
+
+recordings/seitenheben/rec1/keypoints_full.jsonl
+
+recordings/seitenheben/rec2/keypoints_full.jsonl
+
+recordings/seitenheben/rec3/keypoints_full.jsonl
+
+
+recordings/flexion_schulter/rec1/keypoints_full.jsonl
+
+recordings/flexion_schulter/rec2/keypoints_full.jsonl
+
+recordings/flexion_schulter/rec3/keypoints_full.jsonl
+
+
+recordings/mobilisation_schulter/rec1/keypoints_full.jsonl
+
+recordings/mobilisation_schulter/rec2/keypoints_full.jsonl
+
+recordings/mobilisation_schulter/rec3/keypoints_full.jsonl
+
+
+recordings/butterfly/rec1/keypoints_full.jsonl
+
+
+recordings/rotation/rec1/keypoints_full.jsonl
+

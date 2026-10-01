@@ -1,0 +1,24 @@
+{
+  "exercise": "flexion_schulter",
+  "expected_reps": 0,
+  "expected_per_side": {
+    "left": 0,
+    "right": 3
+  },
+  "started_at": "2026-09-29T12:46:04",
+  "pose_model": "full",
+  "video": "video.mp4",
+  "keypoints": "keypoints_full.jsonl",
+  "camera": {
+    "index": 0,
+    "name": "Integrated_Webcam_HD: Integrate"
+  },
+  "resolution": [
+    640,
+    480
+  ],
+  "fps_target": 30.08,
+  "measured_fps": 30.09,
+  "frames_recorded": 368,
+  "frames_with_pose": 368
+}

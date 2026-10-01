@@ -1,0 +1,17 @@
+# Aufnahmen testen (Knopf im Hauptmenue): Die App spielt alle hier eingetragenen Aufnahmen
+# nacheinander statt der Webcam ab und zaehlt die Wiederholungen. "Uebungen waehlen" bleibt
+# immer live, diese Datei aendert daran nichts.
+#
+# Eine Aufnahme pro Zeile (Pfad relativ zu sportuebungen/), Zeilen mit # werden uebersprungen.
+# Jede Aufnahme laeuft mit ihrer eigenen Uebung: aus der summary.json neben dem Video, sonst aus
+# dem Ordnernamen. Daher nur Aufnahmen von tools/record_exercise.py:
+#   recordings/<uebung>/rec<N>/video.mp4
+#
+# Es wird nur gezaehlt: kein Ziel aus dem OP-Tag, keine Einfuehrung, keine Sprachausgabe. Das
+# Video laeuft in Echtzeit wie eine Kamera. Am Ende zeigt eine Liste pro Aufnahme die gezaehlten
+# Wiederholungen und zum Vergleich die Anzahl laut Aufnahme (expected_reps in summary.json).
+
+recordings/bizepscurls/rec2/video.mp4
+recordings/bizepscurls/rec3/video.mp4
+recordings/halswirbelsaeule/rec1/video.mp4
+

@@ -1,7 +1,10 @@
 """
 ******************************************************************************
  file:      mediapipe_modelle.py
- brief:     Software zur Anzeigen die wichtigesten Daten z.B. Winkel, Armwiederholungen für alle Sportübungen auf ein fenster
+ brief:     Pose-Erkennung: aus einem Bild die Pose (Landmarks, roh und normiert). Das einzige
+            Modul, das MediaPipe importiert: Modell, Tasks-API im VIDEO-Modus, Zeichnen der
+            Keypoints. App, Zoom (bildoperation_opencv.py) und tools/record_exercise.py nutzen
+            je eine eigene MediapipeModelle-Instanz.
  author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi, Mazen Al-Hakami
  adviser:   Tanja Wysinsky - medical advising
  version:   1.1.8
@@ -9,175 +12,135 @@
  software:  Python (Version: 3.12.3)
  int. libs:
  ext. libs: Mediapipe (Version: 1.0.1, Tasks-API)
- info:
+ info:      Liest selbst kein Bild: detect() bekommt das Bild vom Uebungslauf.
+            Braucht models/pose_landmarker_full.task (liegt im Repo). lite und heavy (POSE_MODELS)
+            nutzt nur tools/extract_keypoints.py, sie werden bei Bedarf heruntergeladen.
 ******************************************************************************
 """
-import cv2
-import mediapipe_tasks_compat as mp_tasks   # Kompatibilitaetsschicht auf die MediaPipe Tasks API
+import os
+import time
+
+import numpy as np
+import mediapipe as mp
+
+vision = mp.tasks.vision
+
+# Bewusst das full-Modell, nicht lite: entspricht dem frueheren Solutions-Standard
+# (model_complexity=1), auf den die Winkelgrenzen der Uebungen eingestellt sind.
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+POSE_MODELS = {name: os.path.join(MODEL_DIR, f"pose_landmarker_{name}.task") for name in ("lite", "full", "heavy")}
+POSE_MODEL = POSE_MODELS["full"]
+
+# Keypoints im Videobild: Punkte rot, Verbindungen weiss (BGR)
+LANDMARK_STYLE = vision.drawing_utils.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
+CONNECTION_STYLE = vision.drawing_utils.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=2)
+
+# Verbindungen des Skeletts als (Landmark, Landmark), z.B. fuer tools/view_models.py
+POSE_CONNECTIONS = [(c.start, c.end) for c in vision.PoseLandmarksConnections.POSE_LANDMARKS]
+
+# Landmark-Nummern je Seite, aus Sicht des Patienten (das Kamerabild ist ungespiegelt)
+SCHULTER   = {"left": 11, "right": 12}
+ELLBOGEN   = {"left": 13, "right": 14}
+HANDGELENK = {"left": 15, "right": 16}
+HUEFTE     = {"left": 23, "right": 24}
+
+
+class Pose:
+    """Die Landmarks eines Bildes: roh (Pixelrechnung, z.B. Halswirbelsaeule) und normiert (Winkel)."""
+
+    def __init__(self, landmarks, size):
+        self.landmarks = landmarks      # 33 Landmarks mit .x .y .z, relativ zur Bildgroesse
+        self.size = size                # (Breite, Hoehe) des Bildes
+        self.norm = normalize_pose_landmarks(landmarks)
+
+    def xy(self, index):
+        """Normierter 2D-Punkt, wie ihn calculate_angle() erwartet."""
+        return self.norm[index][:2]
+
 
 class MediapipeModelle:
-    def __init__(self, bildoperationen):
-        self.bildoperationen = bildoperationen
-
-        # Initialisiere Zeichen-Helfer (Tasks-API)
-        self.mp_drawing = mp_tasks.drawing_utils
-        self.mp_drawing_styles = mp_tasks.drawing_styles
-        self.pose_connections = mp_tasks.POSE_CONNECTIONS
-        self.face_contours = mp_tasks.FACEMESH_CONTOURS
-
-        # Initialisiere Pose-Erkennung mit den Konfidenzwerten für Erkennung und Tracking
-        self.pose = mp_tasks.PoseTask(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-
-        # Initialisiere Gesicht-Erkennung
-        self.face_mesh = mp_tasks.FaceTask(max_num_faces=1)
-
-        self.visualize_active = False
-
-
-    def whole_body_recognition(self):
-        image_zoomed, image_mediapipe = self.bildoperationen.video_frame()
-
-        # Führe die Pose-Erkennung durch
-        results = self.pose.process(image_mediapipe)
-
-        normalized_pose = []
-
-        
-        if results.pose_landmarks:
-           
-            # Keypoints auf vergrößtes Bild zeichnen
-            if self.visualize_active:
-                 mp_tasks.draw_landmarks(
-                    image_zoomed, results.pose_landmarks, self.pose_connections,
-                    mp_tasks.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2),
-                    mp_tasks.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=2)
-                )
-
-            # Normalisierung der Keypoints
-            normalized_pose = self.normalize_pose_landmarks(results)
-
-        return results, image_zoomed, normalized_pose
-    
-    def normalize_pose_landmarks(self, results):
-        if not results.pose_landmarks:
-            return []
-
-        # Erstellt die Liste, die die normalisierten Landmarks enthalten soll
-        normalizedLandmarks = []
-
-        # Erstellt Liste (x,y,z) aller 33 Pose-Landmarks
-        keypoints = [(lm.x, lm.y, lm.z) for lm in results.pose_landmarks.landmark]
-
-
-        # Normierung mit Mittelpunkt & globaler Skala
-        x_coords = [x for x, y, z in keypoints]
-        y_coords = [y for x, y, z in keypoints]
-        z_coords = [z for x, y, z in keypoints]
-
-        center_x = sum(x_coords) / len(x_coords)
-        center_y = sum(y_coords) / len(y_coords)
-        center_z = sum(z_coords) / len(z_coords)
-
-        # Skala = größte Ausdehnung entlang einer Achse
-        scale = max(
-            max(x_coords) - min(x_coords),
-            max(y_coords) - min(y_coords),
-            max(z_coords) - min(z_coords)
+    def __init__(self, model_path=POSE_MODEL):
+        # Pose-Erkennung im VIDEO-Modus (nutzt das vorige Bild) mit den Konfidenzwerten
+        # für Erkennung und Tracking
+        options = vision.PoseLandmarkerOptions(
+            base_options=mp.tasks.BaseOptions(model_asset_path=_check_model(model_path)),
+            running_mode=vision.RunningMode.VIDEO,
+            num_poses=1,
+            min_pose_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
         )
-        scale = scale if scale > 0 else 1.0
+        self.landmarker = vision.PoseLandmarker.create_from_options(options)
+        self._t0 = time.monotonic()
+        self._last_ts = -1
 
-        normalizedData = [
-            ((x - center_x) / scale,
-             (y - center_y) / scale,
-             (z - center_z) / scale)
-            for (x, y, z) in keypoints
-        ] 
-        
-        # Fügt die normalisierten Keypoints der Liste hinzu
-        normalizedLandmarks.append(normalizedData)
-        # Gibt die Liste der normalisierten Landmarks zurück
-        return normalizedLandmarks
+    def _timestamp_ms(self, ts=None):
+        # detect_for_video() verlangt streng steigende Zeitstempel
+        if ts is None:
+            ts = int((time.monotonic() - self._t0) * 1000)
+        if ts <= self._last_ts:
+            ts = self._last_ts + 1
+        self._last_ts = ts
+        return ts
+
+    def detect(self, image_rgb, timestamp_ms=None):
+        """Pose des Bildes (RGB), None ohne erkannte Person. timestamp_ms: Zeitpunkt des Bildes, z.B.
+        aus einer Aufnahme (gleiche Zeitstempel -> gleiches Ergebnis), sonst die aktuelle Zeit."""
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(image_rgb))
+        result = self.landmarker.detect_for_video(image, self._timestamp_ms(timestamp_ms))
+        if not result.pose_landmarks:
+            return None
+        height, width = image_rgb.shape[:2]
+        return Pose(result.pose_landmarks[0], (width, height))
 
 
+def _check_model(path):
+    if not os.path.exists(path):
+        name = os.path.basename(path).removesuffix(".task")
+        raise FileNotFoundError(
+            f"MediaPipe-Modell nicht gefunden: {path}\n"
+            "Bitte die .task-Datei nach 'models/' herunterladen:\n"
+            f"  https://storage.googleapis.com/mediapipe-models/pose_landmarker/{name}/float16/latest/{name}.task"
+        )
+    return path
 
-    def face_recognition(self):
-        image_zoomed, image_mediapipe = self.bildoperationen.video_frame()
 
-        # Führe die Gesicht-Erkennung durch
-        results = self.face_mesh.process(image_mediapipe)
+def draw_pose(image, landmarks):
+    """Zeichnet die Keypoints (Pose.landmarks) mit ihren Verbindungen in das Bild (BGR)."""
+    vision.drawing_utils.draw_landmarks(
+        image=image,
+        landmark_list=landmarks,
+        connections=vision.PoseLandmarksConnections.POSE_LANDMARKS,
+        landmark_drawing_spec=LANDMARK_STYLE,
+        connection_drawing_spec=CONNECTION_STYLE,
+    )
 
-        normalized_face = []
 
-        # Keypoints visualisieren
-        if self.visualize_active:
-            if results.multi_face_landmarks:
-                # Normaliserung der Keypoints von Facemesh
-                normalized_face = self.normalize_face_landmarks(results)
+def normalize_pose_landmarks(landmarks):
+    """Mittelpunkt aller Landmarks abziehen und durch die groesste Ausdehnung entlang einer Achse
+    teilen. Die Winkelgrenzen aller Uebungen sind auf genau diese Normierung eingestellt."""
+    # Liste (x,y,z) aller 33 Pose-Landmarks
+    keypoints = [(lm.x, lm.y, lm.z) for lm in landmarks]
 
-                for face_landmarks in results.multi_face_landmarks:
-                    # Alle 468 Keypoints visualisieren
-                   
-                    mp_tasks.draw_landmarks(
-                        image_zoomed,
-                        face_landmarks,
-                        self.face_contours,
-                        landmark_drawing_spec=None,
-                        connection_drawing_spec=self.mp_drawing_styles
-                        .get_default_face_mesh_contours_style()
-                        )
-                   
-                    selected_indices = [
-                        # Nase, linke Auge, rechte Auge
-                        1, 33, 263
-                    ]
+    # Normierung mit Mittelpunkt & globaler Skala
+    x_coords = [x for x, y, z in keypoints]
+    y_coords = [y for x, y, z in keypoints]
+    z_coords = [z for x, y, z in keypoints]
 
-                    for idx in selected_indices:
-                        h, w, _ = image_zoomed.shape
-                        x = int(face_landmarks.landmark[idx].x * w)
-                        y = int(face_landmarks.landmark[idx].y * h)
-                        cv2.circle(image_zoomed, (x, y), 5, (255, 0, 0), -1)
+    center_x = sum(x_coords) / len(x_coords)
+    center_y = sum(y_coords) / len(y_coords)
+    center_z = sum(z_coords) / len(z_coords)
 
-            
-        return results, image_zoomed, normalized_face
-    
-    
-    def normalize_face_landmarks(self, results):
-        if not results.multi_face_landmarks:
-            return []
+    # Skala = größte Ausdehnung entlang einer Achse
+    scale = max(
+        max(x_coords) - min(x_coords),
+        max(y_coords) - min(y_coords),
+        max(z_coords) - min(z_coords)
+    )
+    scale = scale if scale > 0 else 1.0
 
-        # Erstellt die Liste, die die normalisierten Landmarks enthalten soll
-        normalizedLandmarks = []
-
-        # Erstellt Liste (x,y,z) aller 468 FaceMesh-Landmarks
-        for face_landmarks in results.multi_face_landmarks:
-            keypoints = [(lm.x, lm.y, lm.z) for lm in face_landmarks.landmark]
-
-                # Normierung mit Mittelpunkt & globaler Skala
-            x_coords = [x for x, y, z in keypoints]
-            y_coords = [y for x, y, z in keypoints]
-            z_coords = [z for x, y, z in keypoints]
-
-            center_x = sum(x_coords) / len(x_coords)
-            center_y = sum(y_coords) / len(y_coords)
-            center_z = sum(z_coords) / len(z_coords)
-
-            # Skala = größte Ausdehnung entlang einer Achse
-            scale = max(
-                max(x_coords) - min(x_coords),
-                max(y_coords) - min(y_coords),
-                max(z_coords) - min(z_coords)
-            )
-            scale = scale if scale > 0 else 1.0
-
-            normalizedData = [
-                ((x - center_x) / scale,
-                (y - center_y) / scale,
-                (z - center_z) / scale)
-                for (x, y, z) in keypoints
-            ] 
-        
-
-            # Fügt die normalisierten Keypoints der Liste hinzu
-            normalizedLandmarks.append(normalizedData)
-            # Gibt die Liste der normalisierten Landmarks zurück
-        return normalizedLandmarks
+    return [
+        ((x - center_x) / scale,
+         (y - center_y) / scale,
+         (z - center_z) / scale)
+        for (x, y, z) in keypoints
+    ]

@@ -1,0 +1,20 @@
+{
+  "exercise": "mobilisation_schulter",
+  "expected_reps": 3,
+  "started_at": "2026-09-29T12:49:22",
+  "pose_model": "full",
+  "video": "video.mp4",
+  "keypoints": "keypoints_full.jsonl",
+  "camera": {
+    "index": 0,
+    "name": "Integrated_Webcam_HD: Integrate"
+  },
+  "resolution": [
+    640,
+    480
+  ],
+  "fps_target": 30.09,
+  "measured_fps": 30.1,
+  "frames_recorded": 374,
+  "frames_with_pose": 374
+}
