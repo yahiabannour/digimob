@@ -19,7 +19,6 @@ from uebung import Armheben
 class Abduktion(Armheben):
     title = "Abduktion Schulter"
     name = "Abduktion"
-    image = "bilder/Abduktion_Schulter.jpg"
     demo = "demos/abduktion.mp4"
     intro = ("Sie fangen jetzt mit der Übung Abduktion an. Bitte legen Sie die Hände unten "
              "neben den Körper, damit die Übung starten kann.")

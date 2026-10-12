@@ -22,7 +22,7 @@ import time
 
 from camera.file_camera import FileCamera
 
-INTRO_SECONDS = 10      # Einfuehrung mindestens so lange, ohne Demo nur das Beispielbild + Ansage
+INTRO_SECONDS = 10      # Einfuehrung mindestens so lange, ohne Demo nur die Ansage
 DEMO_PLAYS = 1          # so oft laeuft die 3D-Demo ganz durch, bevor gezaehlt wird: jede Demo zeigt 2-3
                         # Wiederholungen, so viele sollen die Patienten sehen (eine Demo dauert 9-18 s)
 DONE_SECONDS = 5        # "Prima, gute Leistung!" stehen lassen, dann die naechste Uebung
@@ -101,7 +101,7 @@ class Uebungslauf:
     def start(self, cam, uebungen, on_source_end, on_finished=None, intro=True):
         """cam: Camera oder FileCamera (getFrame() liefert RGB). on_source_end(uebung): keine Bilder
         mehr (Kamera ausgefallen, Video zu Ende). on_finished(): alle Uebungen fertig.
-        intro=False: ohne Beispielbild und Ansage, gezaehlt wird ab dem ersten Frame."""
+        intro=False: ohne Demo und Ansage, gezaehlt wird ab dem ersten Frame."""
         self.stop_worker()
         self.cam, self.queue, self.intro = cam, list(uebungen), intro
         self.on_source_end, self.on_finished = on_source_end, on_finished
@@ -130,20 +130,20 @@ class Uebungslauf:
         self.sprecher.reset()
         self.set_phase("intro" if self.intro else "counting")
         if self.intro:
-            self.intro_image = self.bild.load(self.uebung.image)
+            self.intro_image = None     # bis das erste Bild der Demo da ist
             self.demo = self.open_demo(self.uebung.demo)
             self.sprecher.say(self.uebung.intro)
 
     @staticmethod
     def open_demo(path):
         """3D-Demo der Uebung als Endlosschleife, gespiegelt wie das Kamerabild. None ohne Demo:
-        dann bleibt das Beispielbild."""
+        dann laeuft nur die Ansage (die Einfuehrung zeigt nur die Demos, keine Beispielbilder)."""
         if not path:
             return None
         try:
             demo = FileCamera(path, mirrored=True, frame_width=DEMO_SIZE[0], frame_height=DEMO_SIZE[1])
         except FileNotFoundError as e:
-            logging.warning(f"Keine Demo, zeige das Beispielbild: {e}")
+            logging.warning(f"Keine Demo, die Einfuehrung zeigt kein Bild: {e}")
             return None
         demo.loop = True
         return demo
@@ -172,7 +172,7 @@ class Uebungslauf:
             return
 
         if self.phase == "intro":
-            # 3D-Demo (sonst Beispielbild) zeigen, waehrend die Ansage laeuft; die Kamera wird
+            # 3D-Demo zeigen, waehrend die Ansage laeuft; die Kamera wird
             # nicht gelesen. Die Demo steht bei Pause still (FileCamera: MAX_FRAME_GAP)
             if self.demo is not None:
                 frame = self.demo.getFrame()

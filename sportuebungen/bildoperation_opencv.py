@@ -15,8 +15,6 @@
 ******************************************************************************
 """
 
-import logging
-
 import cv2
 import numpy as np
 
@@ -148,14 +146,6 @@ class Bildoperationen:
 
 
     # ---------- Anzeige ----------
-    @staticmethod
-    def load(path):
-        """Beispielbild der Einfuehrung (BGR), None wenn es sich nicht laden laesst."""
-        image = cv2.imread(path)
-        if image is None:
-            logging.error(f"Fehler: Bild konnte nicht geladen werden: {path}")
-        return image
-
     @staticmethod
     def demo_frame(frame_rgb):
         """Ein Bild der 3D-Demo (RGB von FileCamera, schon gespiegelt) als BGR fuer die Anzeige."""

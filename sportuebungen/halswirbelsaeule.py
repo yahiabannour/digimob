@@ -21,7 +21,6 @@ from uebung import UEBER_ZIEL, Uebung
 class Halswirbelsaeule(Uebung):
     title = "Halswirbelsäule"
     name = "Halswirbelsaeule"
-    image = "bilder/Halswirbelsaeule.jpg"
     demo = "demos/halswirbelsaeule.mp4"
     intro = ("Sie fangen jetzt mit der Übung Halswirbelsäule an. Bitte halten Sie den Kopf ruhig "
              "in der Mitte, damit die Übung starten kann.")

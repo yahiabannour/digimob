@@ -18,7 +18,6 @@ from uebung import Armheben
 class Seitenheben(Armheben):
     title = "Seitheben"
     name = "Seitheben"
-    image = "bilder/Seitheben.jpg"
     demo = "demos/seitenheben.mp4"
     intro = ("Sie fangen jetzt mit der Übung Seitheben an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")

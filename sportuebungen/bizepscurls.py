@@ -20,7 +20,6 @@ from uebung import UEBER_ZIEL, Haltezeit, Uebung
 class Bizepscurls(Uebung):
     title = "Bizepscurls"
     name = "Bizepscurls"
-    image = "bilder/Bizepscurls.jpg"
     demo = "demos/bizepscurls.mp4"
     intro = ("Sie fangen jetzt mit der Übung Bizepscurls an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")

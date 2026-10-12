@@ -373,9 +373,6 @@ class FakeBild:
     def overlay(self, image, p, uebung):
         return image
 
-    def load(self, path):
-        return None
-
     def demo_frame(self, frame):
         return frame
 

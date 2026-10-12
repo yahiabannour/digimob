@@ -20,7 +20,6 @@ from uebung import UEBER_ZIEL, Uebung
 class Butterfly(Uebung):
     title = "Butterfly"
     name = "Butterfly"
-    image = "bilder/Butterfly.jpg"
     demo = "demos/butterfly.mp4"
     # "Batterflei": so spricht die deutsche Stimme das Wort richtig aus
     intro = ("Sie fangen jetzt mit der Übung Batterflei an. Bitte legen Sie die Hände runter "

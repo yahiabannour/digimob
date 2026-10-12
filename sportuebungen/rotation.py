@@ -20,7 +20,6 @@ from uebung import UEBER_ZIEL, Uebung
 class Rotation(Uebung):
     title = "Rotation im Sitzen"
     name = "Rotation im Sitzen"
-    image = "bilder/Rotation_im_Stand.jpg"
     demo = "demos/rotation.mp4"
     intro = ("Sie fangen jetzt mit der Übung Rotation an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")

@@ -38,8 +38,7 @@ UEBER_ZIEL = 1.25       # der Balken reicht ein Viertel ueber das Ziel: die Ziel
 class Uebung:
     title = ""                  # im Menue, z.B. "Abduktion Schulter"
     name = ""                   # im Videobild; ohne Umlaute, cv2.putText() kann keine zeichnen
-    image = ""                  # Beispielbild waehrend der Einfuehrung
-    demo = ""                   # 3D-Demo (Video, tools/blender_demos.py), ersetzt das Beispielbild
+    demo = ""                   # 3D-Demo (Video), die Einfuehrung zeigt sie statt eines Bildes
     intro = ""                  # Ansage waehrend der Einfuehrung
     sides = ("left", "right")   # Butterfly und Rotation zaehlen nur eine Bewegung: ("both",)
     target_message = "Super, versuchen Sie {} mal zu schaffen!"
