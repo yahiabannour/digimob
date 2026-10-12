@@ -7,15 +7,19 @@
               summary.json                  Zusammenfassung, darunter expected_reps (Ground Truth): so viele
                                             Wiederholungen soll die App in der Aufnahme zaehlen (bei zwei
                                             Seiten die kleinere), expected_per_side: {"left": n, "right": m}
-                                            nur wenn pro Seite eingegeben (Sicht des Patienten), und
+                                            nur wenn pro Seite eingegeben (Sicht des Patienten), preset:
+                                            Schwellen, mit denen gezaehlt werden soll ("voll" oder
+                                            "einfach", uebung.PRESETS; ohne Angabe "voll"), und
                                             camera: {"index": --cam, "name": wie bei --list-cams, null
                                             ausserhalb von Linux}
               keypoints_<modell>.jsonl      Pose-Keypoints pro Frame, fuer Systemtests ohne Kamera und Video.
                                             <modell> aus dem Dateinamen des Pose-Modells (z.B. full fuer
-                                            pose_landmarker_full.task, lite fuer pose_landmarker_lite.task).
+                                            pose_landmarker_full.task, das einzige Modell der App).
                                             Die bei der Aufnahme geschriebene Datei steht in summary.json
                                             (keypoints), weitere Modelle erzeugt tools/extract_keypoints.py
                                             nachtraeglich aus dem Video.
+ author(s): Yahia Bannour
+ date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs:
  info:      Die keypoints_<modell>.jsonl hat eine Zeile pro Frame:
@@ -36,7 +40,9 @@ import json
 import os
 from collections import namedtuple
 
-from mediapipe_modelle import Pose
+from pose import Pose
+from uebung import PRESETS
+from uebungen import UEBUNGEN
 
 # Ordner einer Aufnahme: recordings/<uebung>/rec1, rec2, ...
 REC_DIR_PREFIX = "rec"
@@ -84,8 +90,7 @@ def write_keypoints(path, timestamps, poses):
 def read_poses(keypoints_path, resolution):
     """Liest eine keypoints_<modell>.jsonl und liefert pro Frame (timestamp, Pose), Pose None ohne
     erkannte Pose. resolution: (Breite, Hoehe) aus summary.json. Die Pose ist dieselbe wie in der
-    App (Normierung aus mediapipe_modelle.py), systest.py und tools/compare_models.py nutzen beide
-    diese Funktion."""
+    App (Normierung aus pose.py); systest.py nutzt diese Funktion."""
     with open(keypoints_path, encoding="utf-8") as f:
         for line in f:
             frame = json.loads(line)
@@ -94,12 +99,26 @@ def read_poses(keypoints_path, resolution):
             yield frame["timestamp"], pose
 
 
+def uebung_fuer(summary):
+    """Die Uebung einer Aufnahme zum Nachzaehlen (systest.py, Aufnahmen testen, Tools): nur zaehlen
+    (target=None), mit den Schwellen ihres Presets (summary["preset"], ohne Angabe "voll")."""
+    cls = UEBUNGEN[summary["exercise"]]
+    return cls(target=None, schwellen=cls.werte(summary.get("preset", PRESETS[0])))
+
+
+def erwartet_je_seite(uebung, expected_reps, expected_per_side=None):
+    """Erwartete Zaehlung je Seite (systest.py und Aufnahmen testen): expected_per_side, wenn in der
+    summary.json angegeben, sonst expected_reps fuer jede Seite ("5" im Recorder heisst beide Seiten
+    5). So faellt auch eine Seite auf, die zu viel zaehlt (total ist nur die kleinere)."""
+    return expected_per_side or {side: expected_reps for side in uebung.sides}
+
+
 def write_recording(rec_dir, timestamps, poses, meta):
     """Schreibt summary.json und keypoints_<modell>.jsonl in rec_dir (neben das Video) und gibt
     (Zusammenfassung, Pfad der Keypoints-Datei) zurueck.
     poses: pro Frame die Liste aus landmarks_to_list(), None ohne Pose
-    meta: exercise, expected_reps, expected_per_side (None ohne Angabe pro Seite), started_at, video,
-    camera, width, height, fps_target, pose_model"""
+    meta: exercise, expected_reps, expected_per_side (None ohne Angabe pro Seite), preset, started_at,
+    video, camera, width, height, fps_target, pose_model"""
     keypoints_path = os.path.join(rec_dir, keypoints_file(meta["pose_model"]))
     write_keypoints(keypoints_path, timestamps, poses)
 
@@ -109,6 +128,7 @@ def write_recording(rec_dir, timestamps, poses, meta):
         "exercise": meta["exercise"],
         "expected_reps": meta["expected_reps"],
         **({"expected_per_side": meta["expected_per_side"]} if meta.get("expected_per_side") else {}),
+        "preset": meta["preset"],
         "started_at": meta["started_at"],
         "pose_model": meta["pose_model"],
         "video": meta["video"],

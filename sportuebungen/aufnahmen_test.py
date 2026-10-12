@@ -4,8 +4,14 @@
  brief:     "Aufnahmen testen" (Knopf im Hauptmenue): spielt die Aufnahmen aus videomodus.txt
             nacheinander statt der Webcam ab, jede mit ihrer Uebung, und zaehlt nur. Am Ende
             zeigt eine Liste die gezaehlten Wiederholungen jeder Aufnahme neben expected_reps.
+            Gezaehlt wird mit den Schwellen der Aufnahme (summary.json "preset"), nicht mit den im
+            Auswahlmenue eingestellten. Jede Aufnahme gibt bei jedem Durchlauf dasselbe Ergebnis:
+            jedes Bild des Videos wird ausgewertet (keins uebersprungen, das Video laeuft so schnell
+            wie der Rechner rechnet), mit der Zeit im Video statt der Uhr, mit frischer
+            Pose-Erkennung je Aufnahme und ohne Zoom.
+ author(s): Yahia Bannour
  version:   1.1.9
- date:      25.09.2026
+ date:      10.10.2026
  software:  Python (Version: 3.12)
  info:      Kein Ziel aus dem OP-Tag, keine Einfuehrung, keine Sprachausgabe: jede Uebung laeuft
             mit target=None und intro=False im selben Uebungslauf wie live.
@@ -17,7 +23,7 @@ import os
 from tkinter import messagebox
 
 from camera.file_camera import FileCamera
-from tools.recording_format import SUMMARY_FILE
+from tools.recording_format import SUMMARY_FILE, erwartet_je_seite, uebung_fuer
 from uebungen import UEBUNGEN
 
 # Liste der Aufnahmen, die nacheinander abgespielt werden (Aufbau siehe Kommentare in der Datei)
@@ -27,7 +33,9 @@ VIDEO_CONFIG = "videomodus.txt"
 def read_test_videos():
     """Aufnahmen aus videomodus.txt, jede mit ihrer Uebung: aus der summary.json neben dem Video
     (tools/record_exercise.py), sonst aus dem Ordner recordings/<uebung>/rec<N>/.
-    Liste von {"path", "exercise", "expected"}; expected = Wiederholungen laut Aufnahme oder None."""
+    Liste von {"path", "exercise", "preset", "expected", "per_side"}; expected = Wiederholungen laut
+    Aufnahme oder None, per_side = expected_per_side oder None, preset = Schwellen laut Aufnahme
+    (ohne summary.json "voll")."""
     with open(VIDEO_CONFIG, encoding="utf-8") as f:
         paths = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
@@ -45,7 +53,8 @@ def read_test_videos():
         if exercise not in UEBUNGEN:
             problems.append(f"{path}: Übung unbekannt (erwartet recordings/<uebung>/rec<N>/)")
             continue
-        videos.append({"path": path, "exercise": exercise, "expected": summary.get("expected_reps")})
+        videos.append({"path": path, "exercise": exercise, "preset": summary.get("preset", "voll"),
+                       "expected": summary.get("expected_reps"), "per_side": summary.get("expected_per_side")})
 
     if problems:
         raise ValueError("\n".join(problems))
@@ -54,7 +63,8 @@ def read_test_videos():
 
 class AufnahmenTest:
     def __init__(self, app):
-        self.app = app          # SportApp: lauf, window, resolution, exercise_frame, show_frame, loop, back_to_menu
+        self.app = app          # SportApp: lauf, window, resolution, exercise_frame, show_frame, loop,
+                                # back_to_menu, bild_operationen, toggle_zoom, zoom_button
         self.active = False
         self.cam = None
 
@@ -72,6 +82,10 @@ class AufnahmenTest:
         self.active = True
         self.results = []
         self.index = 0
+        # Der Zoom hat eine eigene Pose-Erkennung mit der Uhr als Zeit: im Test aus
+        if self.app.bild_operationen.zoom_factor > 1.0:
+            self.app.toggle_zoom()
+        self.app.zoom_button.config(state="disabled")
         self.app.show_frame(self.app.exercise_frame)
         self.start_video()
         self.app.loop()
@@ -82,7 +96,10 @@ class AufnahmenTest:
         while self.index < len(self.videos):
             video = self.videos[self.index]
             try:
-                self.cam = FileCamera(video["path"], mirrored=False, frame_width=width, frame_height=height)
+                # realtime=False: jedes Bild mit seiner Zeit im Video, sonst haengt das Ergebnis
+                # davon ab, wie viele Bilder der Rechner gerade schafft
+                self.cam = FileCamera(video["path"], mirrored=False, frame_width=width, frame_height=height,
+                                      realtime=False)
             except Exception as e:
                 # Video laesst sich nicht oeffnen: im Ergebnis vermerken, weiter mit dem naechsten
                 logging.error(f"Aufnahmen-Test: {video['path']}: {e}")
@@ -94,7 +111,7 @@ class AufnahmenTest:
             self.app.window.title(f"Reha-Sportübungen - Aufnahmen-Test {number}: {video['path']}")
             logging.info(f"Aufnahmen-Test {number}: {video['path']} ({video['exercise']})")
             # Ohne Ziel (nur zaehlen) und ohne Einfuehrung: gezaehlt wird ab dem ersten Frame
-            self.app.lauf.start(self.cam, [UEBUNGEN[video["exercise"]](target=None)],
+            self.app.lauf.start(self.cam, [uebung_fuer(video)],
                                 on_source_end=self.video_finished, intro=False)
             return
         self.show_results()
@@ -103,12 +120,17 @@ class AufnahmenTest:
     def video_finished(self, uebung):
         video = self.videos[self.index]
         counted = uebung.total
-        result = f"{video['path']} ({video['exercise']}): {counted} gezählt"
+        result = f"{video['path']} ({video['exercise']}, {video['preset']}): {counted} gezählt"
         if uebung.sides == ("left", "right"):
             result += f" (links {uebung.counter['left']}, rechts {uebung.counter['right']})"
         if video["expected"] is not None:
             result += f", laut Aufnahme {video['expected']}"
-            result += " - OK" if counted == video["expected"] else " - ABWEICHUNG"
+            if video["per_side"]:
+                result += f" (links {video['per_side']['left']}, rechts {video['per_side']['right']})"
+            # Wie systest.py: total und jede Seite, sonst fiele eine Seite nicht auf, die zu viel zaehlt
+            expected = erwartet_je_seite(uebung, video["expected"], video["per_side"])
+            ok = counted == video["expected"] and uebung.counter == expected
+            result += " - OK" if ok else " - ABWEICHUNG"
         self.results.append(result)
         logging.info(f"Aufnahmen-Test: {result}")
 
@@ -130,4 +152,5 @@ class AufnahmenTest:
             self.cam.close()
             self.cam = None
         self.active = False
+        self.app.zoom_button.config(state="normal")
         self.app.window.title("Reha-Sportübungen")

@@ -3,10 +3,10 @@
  file:      bildoperation_opencv.py
  brief:     Software zur Anzeige der wichtigsten Daten im Videobild, z.B. Wiederholungen für alle
             Sportübungen, und Zoom auf den Kopf
- author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
+ author(s): Yahia Bannour
  adviser:   Tanja Wysinsky - medical advising
  version:   1.1.8
- date:      10.12.2025
+ date:      10.10.2026
  software:  Python (Version: 3.12.3)
  int. libs:
  ext. libs: OpenCV (Version: 4.10.0.84); MediaPipe nur ueber mediapipe_modelle.py
@@ -36,8 +36,9 @@ class Bildoperationen:
         self._prev_cx = None
         self._prev_cy = None
 
-        # Eigene Pose-Erkennung nur fuer den Zoom-Mittelpunkt (nicht die der Uebung)
-        self._pose = MediapipeModelle()
+        # Eigene Pose-Erkennung nur fuer den Zoom-Mittelpunkt (nicht die der Uebung). Erst beim
+        # ersten Zoom-Bild geladen: das Modell kostet ~0.2 s und ~70 MB, Zoom ist selten an
+        self._pose = None
 
     def reset_smoothing(self):
         self._prev_cx = self._prev_cy = None
@@ -136,6 +137,8 @@ class Bildoperationen:
     # Zoom-Mittelpunkt: die Nase in Pixeln, ohne erkannte Pose die Bildmitte
     def _from_posemesh(self, rgb, frame_bgr):
         h, w = frame_bgr.shape[:2]
+        if self._pose is None:
+            self._pose = MediapipeModelle()
         pose = self._pose.detect(rgb)
         if pose is None:
             return w//2, h//2
@@ -159,28 +162,14 @@ class Bildoperationen:
         return cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
     def overlay(self, image_zoomed, pose, uebung):
-        """Keypoints (falls an), dann gespiegelt mit Name, Meldung, Phase und Wiederholungen je Seite.
-        Beschriftet wird aus Sicht des Patienten; Uebungen mit einem Zaehler zeigen ihn zweimal."""
+        """Keypoints (falls an), dann gespiegelt mit Name und Meldung. Die Wiederholungen je Seite
+        zeigen die Balken der Oberflaeche (uebung.progress())."""
         if self.show_keypoints and pose is not None:
             draw_pose(image_zoomed, pose.landmarks)
-
-        left, right = uebung.sides[0], uebung.sides[-1]
-        stage_left, stage_right = uebung.stage[left], uebung.stage[right]
-        counter_left, counter_right = uebung.shown_count(left), uebung.shown_count(right)
 
         image_zoomed = cv2.flip(image_zoomed, 1)
 
         cv2.putText(image_zoomed, uebung.name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 3, cv2.LINE_AA)
         cv2.putText(image_zoomed, uebung.message, (10, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-
-        cv2.putText(image_zoomed, 'Phase', (10, 330), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.putText(image_zoomed, stage_left if stage_left else 'N/A', (10, 375), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3, cv2.LINE_AA)
-        cv2.putText(image_zoomed, 'Anzahl linke Seite', (130, 330), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.putText(image_zoomed, str(counter_left), (220, 385), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3, cv2.LINE_AA)
-
-        cv2.putText(image_zoomed, 'Phase', (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.putText(image_zoomed, stage_right if stage_right else 'N/A', (15, 465), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3, cv2.LINE_AA)
-        cv2.putText(image_zoomed, 'Anzahl rechte Seite', (130, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.putText(image_zoomed, str(counter_right), (220, 475), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3, cv2.LINE_AA)
 
         return image_zoomed

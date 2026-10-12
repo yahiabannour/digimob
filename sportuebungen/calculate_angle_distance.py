@@ -2,10 +2,10 @@
 ******************************************************************************
  file:      calculate_angle_distance.py
  brief:     Software zur Berechnung von Winkel zwischen 3 Keypointer und Abstand zwischen 2 Keypointer 
- author(s): Ezaldeen Al-Shahethi, Abdulatif Mujali, Jörg Schneider
+ author(s): Yahia Bannour
  adviser:   Tanja Wysinsky - medical advising
  version:   1.1.8
- date:      10.12.2025
+ date:      10.10.2026
  software:  Python (Version: 3.12.3)
  int. libs: 
  ext. libs: Numpy (Version: 1.26.4)
@@ -28,6 +28,10 @@ def calculate_angle(landmark_1, landmark_2, landmark_3):
     # Beträge der Vektoren berechnen
     magnitude_ab = np.linalg.norm(vector_ba)
     magnitude_bc = np.linalg.norm(vector_bc)
+    # Liegen zwei Punkte aufeinander, gibt es keinen Winkel (sonst NaN, das bis in den Balken
+    # durchschlug). Uebung.update() macht aus der Ausnahme einen ungueltigen Frame.
+    if magnitude_ab == 0 or magnitude_bc == 0:
+        raise ValueError("Winkel nicht bestimmbar: zwei Punkte liegen aufeinander")
     # Winkel in Grad berechnen
     cos_angle = np.clip(dot_product / (magnitude_ab * magnitude_bc), -1.0, 1.0)
     angle = np.degrees(np.arccos(cos_angle))
@@ -44,8 +48,10 @@ def calculate_distance(landmark_1, landmark_2):
 
 # Funktion zur Berechnung des Fortschritts (0..1) eines Messwerts vom Startwert (0) zum Zielwert (1),
 # z.B. für den Fortschrittsbalken. Der Zielwert darf auch kleiner als der Startwert sein.
-def calculate_progress(value, start_value, target_value):
-    if target_value == start_value:                 # Kein Bereich vorhanden (z.B. noch keine Messwerte)
+def calculate_progress(value, start_value, target_value, upper=1.0):
+    """0 bei start_value, 1 bei target_value, begrenzt auf 0..upper (upper > 1: ueber das Ziel
+    hinaus, z.B. fuer den Balken, der das Ziel als Linie zeigt)."""
+    if target_value == start_value or not np.isfinite(value):   # kein Bereich oder kein Messwert
         return 0.0
     progress = (value - start_value) / (target_value - start_value)
-    return float(np.clip(progress, 0.0, 1.0))       # Auf den Bereich 0..1 begrenzen
+    return float(np.clip(progress, 0.0, upper))

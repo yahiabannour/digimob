@@ -4,12 +4,16 @@
  brief:     Nimmt Sportuebungen mit der Kamera auf: Video (mp4, sonst webm) fuer den
             Videomodus der App (videomodus.txt), eine Zusammenfassung mit Ground Truth und pro Frame die
             MediaPipe-Pose-Keypoints fuer Systemtests. Ohne Tkinter, Sprachausgabe und Zoom.
+ author(s): Yahia Bannour
+ date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: OpenCV (Version: 5.0.0.93), Mediapipe (Version: 1.0.1, Tasks-API)
  info:      Aufruf aus sportuebungen/:
               python tools/record_exercise.py bizepscurls [--cam 1]
             Uebungen: UEBUNGEN in uebungen.py, Dateiformat: tools/recording_format.py.
             --cam: Kamera-Index, z.B. fuer eine externe Webcam.
+            --preset einfach: mit den gelockerten Schwellen nachzaehlen (Bewegung wie Patienten),
+                     Standard voll. Landet als "preset" in summary.json.
             Welche Indizes es gibt:
               python tools/record_exercise.py --list-cams
             Vorschaufenster:
@@ -50,6 +54,7 @@ from camera.camera import Camera
 from mediapipe_modelle import POSE_MODEL, MediapipeModelle, draw_pose
 from tools.recording_format import (REC_DIR_PREFIX, SUMMARY_FILE, VIDEO_FORMATS, VIDEO_NAME, landmarks_to_list,
                                     model_name, write_recording)
+from uebung import PRESETS
 from uebungen import UEBUNGEN
 
 # Unabhaengig vom aktuellen Ordner
@@ -205,7 +210,7 @@ class Recording:
         print(f"  Keypoints:       {os.path.basename(keypoints_path)}")
         per_side = (f", links {expected_per_side['left']}, rechts {expected_per_side['right']}"
                     if expected_per_side else "")
-        print(f"  Wiederholungen:  {expected_reps}{per_side} (Ground Truth)")
+        print(f"  Wiederholungen:  {expected_reps}{per_side} (Ground Truth, Preset {meta['preset']})")
         print(f"  Frames:          {summary['frames_recorded']} ({summary['measured_fps']} fps gemessen)")
         print(f"  Frames mit Pose: {summary['frames_with_pose']}")
         measured_fps = summary["measured_fps"]
@@ -318,6 +323,9 @@ def parse_args():
     parser.add_argument("exercise", nargs="?", choices=sorted(UEBUNGEN), help="Uebung")
     parser.add_argument("--cam", type=int,
                         help="Kamera-Index, z.B. fuer eine externe Webcam (Standard: automatische Auswahl)")
+    parser.add_argument("--preset", choices=PRESETS, default=PRESETS[0],
+                        help="Schwellen, mit denen systest und Aufnahmen testen diese Aufnahmen zaehlen: "
+                             "voll, oder einfach fuer Bewegungen wie von Patienten (Standard: voll)")
     parser.add_argument("--list-cams", action="store_true",
                         help="angeschlossene Kameras mit Index fuer --cam anzeigen und beenden")
     args = parser.parse_args()
@@ -349,9 +357,9 @@ def main():
 
         # Name wie bei --list-cams, None ausserhalb von Linux
         camera = {"index": cam.cam_id, "name": device_info(cam.cam_id, "name") or None}
-        meta = {"exercise": args.exercise, "camera": camera}
+        meta = {"exercise": args.exercise, "preset": args.preset, "camera": camera}
         camera_name = f" ({camera['name']})" if camera["name"] else ""
-        print(f"Kamera {cam.cam_id}{camera_name}, {width}x{height}, Pose-Modell {POSE_MODEL_NAME}, "
+        print(f"Kamera {cam.cam_id}{camera_name}, {width}x{height}, Pose-Modell {POSE_MODEL_NAME}, Preset {args.preset}, "
               f"Ausgabe: {exercise_dir}/{REC_DIR_PREFIX}<N>/")
         print("Vorschaufenster: SPACE startet/beendet die Aufnahme, danach Wiederholungen eintippen und ENTER "
               "(ESC verwirft), q beendet.")

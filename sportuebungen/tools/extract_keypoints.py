@@ -2,14 +2,15 @@
 ******************************************************************************
  file:      tools/extract_keypoints.py
  brief:     Erzeugt die Keypoints einer Aufnahme nachtraeglich aus ihrem Video, mit einem beliebigen
-            Pose-Modell (lite, full, heavy). So lassen sich die Modelle an denselben Aufnahmen
-            vergleichen (tools/compare_models.py), ohne neu aufzunehmen: das Video ist die
-            Grundlage, die Keypoints sind daraus abgeleitet.
+            Pose-Modell (POSE_MODELS, nur noch full). So lassen sich die Keypoints neu erzeugen,
+            ohne neu aufzunehmen: das Video ist die Grundlage, die Keypoints sind daraus abgeleitet.
+ author(s): Yahia Bannour
+ date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: OpenCV (Version: 5.0.0.93), Mediapipe (Version: 1.0.1, Tasks-API)
  info:      Aufruf aus sportuebungen/ (oder von ueberall):
-              python tools/extract_keypoints.py lite                          alle Aufnahmen
-              python tools/extract_keypoints.py lite recordings/bizepscurls/rec1 ...
+              python tools/extract_keypoints.py full --out DIR                alle Aufnahmen
+              python tools/extract_keypoints.py full --out DIR recordings/bizepscurls/rec1 ...
             Schreibt keypoints_<modell>.jsonl neben das Video (Format: tools/recording_format.py),
             summary.json bleibt unveraendert.
               - jedes Frame des Videos wird ausgewertet (kein Echtzeit-Abspielen wie FileCamera)
@@ -58,7 +59,7 @@ def recorded_timestamps(rec_dir, summary):
 
 
 def read_frames(video_path, scale=1.0):
-    """Alle Frames des Videos als RGB, mit scale verkleinert (tools/view_models.py spart so Speicher)."""
+    """Alle Frames des Videos als RGB, mit scale verkleinert."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Video laesst sich nicht oeffnen: {video_path}")

@@ -1,6 +1,7 @@
 {
   "exercise": "butterfly",
   "expected_reps": 5,
+  "preset": "voll",
   "started_at": "2026-09-29T12:54:50",
   "pose_model": "full",
   "video": "video.mp4",

@@ -1,3 +1,5 @@
+import logging
+
 import cv2
 import threading
 import queue
@@ -27,7 +29,7 @@ class Camera():
             self.mode = cv2.CAP_DSHOW # cv2.CAP_MSMF
         else:
             self.mode = cv2.CAP_ANY
-        if cam_id == None:
+        if cam_id is None:
             self.autoselect_cam_id()
         else:
             self.cam_id = cam_id
@@ -36,7 +38,10 @@ class Camera():
         self.cap = None
         
         self.prev_time = None
-        
+        # Before open(): if it fails, __del__ -> close() still finds them
+        self.stop_event = threading.Event()
+        self.thread = None
+
         self.open(frame_width, frame_height)
 
         self.valid_resolutions = []
@@ -54,7 +59,6 @@ class Camera():
                 raise Exception("Failed to set frame size.")
 
         self.queue = queue.Queue(maxsize=1)  # always store the latest frame
-        self.stop_event = threading.Event()
         self.thread = threading.Thread(target=self._read_frames, daemon=True)
         self.thread.start()
 
@@ -78,15 +82,16 @@ class Camera():
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
     def close(self) -> None:
-        if self.cap is not None:
-            self.stop_event.set()
-        
-            self.cap.release()
-            self.cap = None
-
+        # Stop the reader thread first, then release the camera: release() while the thread is
+        # inside cap.read() can crash in OpenCV
+        self.stop_event.set()
         if self.thread is not None:
             self.thread.join(timeout=2)  # Wait up to 2 seconds for thread to finish
             self.thread = None
+
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
 
     def autoselect_cam_id(self):
         cam_id = None
@@ -107,7 +112,7 @@ class Camera():
             if self.verbose:
                 print(f"- cam {i} : {width:.0f}x{height:.0f}px @ {fps}fps")
             
-            if cam_id == None:
+            if cam_id is None:
                 cam_id = i
                 best_cam_width  = width
                 #best_cam_height = height
@@ -129,7 +134,7 @@ class Camera():
                     #best_cam_fps    = fps
                 pass
         
-        if cam_id == None:
+        if cam_id is None:
             msg = """Error: No cameras found.
                      Check if user is in group video, else run this and log out and in again.
                      sudo usermod -aG video $USER """
@@ -171,7 +176,7 @@ class Camera():
     def _read_frames(self):
         while not self.stop_event.is_set():
             try:
-                if self.cap == None:
+                if self.cap is None:
                     raise Exception("camera capture failed (1)")
                     
                 if not self.cap.isOpened():
@@ -191,7 +196,9 @@ class Camera():
                 
                 self.queue.put((ret, frame))
             except Exception as e:
-                print(f"H2 Exception: {e}")
+                # Ins Log statt nur in die Konsole; die App kann die Kamera beim nächsten Start
+                # einer Übung neu öffnen (SportApp.ensure_live_camera)
+                logging.error(f"Kamera {self.cam_id}: {e}")
                 self.stop_event.set()
                 
     def getFrame(self) -> None:

@@ -5,10 +5,39 @@ sportuebungen/recordings/**/*.mp4
 sportuebungen/recordings/**/*.webm
 .pytest_cache/
 .mcp.json
-sportuebungen/models/pose_landmarker_lite.task
-sportuebungen/models/pose_landmarker_heavy.task
 sportuebungen/demos/*.blend*
 sportuebungen/demos/assets/
+sportuebungen/demos/versions/
 sportuebungen/videos/
+sportuebungen/tools/bedienungsanleitung.py
+sportuebungen/tools/blender_demos.py
+sportuebungen/tools/colab_render.sh
+sportuebungen/tools/video_motion.py
+sportuebungen/tools/counting_doc.py
 sportuebungen/.playwright-mcp/
 .claude/
+sportuebungen/schwellen.json
+sportuebungen/schwellen.json.tmp
+sportuebungen/Bedienungsanleitung/bedienungsanleitung.html
+sportuebungen/Bedienungsanleitung/bilder/
+sportuebungen/docs
+.ruff_cache/
+CLAUDE.md
+sportuebungen/changelog.md
+
+*.db / Benutzerdaten/
+# Personal data and local files
+sportuebungen/camera/test.png
+*.tar.gz
+.playwright-mcp/
+.env
+.env.*
+
+# Videos anywhere, except the rendered 3D demos (the app plays them)
+*.mp4
+*.webm
+*.avi
+*.mkv
+*.mov
+!sportuebungen/demos/*.mp4
+sportuebungen/bilder/

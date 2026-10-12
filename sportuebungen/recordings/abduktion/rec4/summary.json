@@ -1,0 +1,21 @@
+{
+  "exercise": "abduktion",
+  "expected_reps": 5,
+  "preset": "einfach",
+  "started_at": "2026-10-08T09:09:14",
+  "pose_model": "full",
+  "video": "video.mp4",
+  "keypoints": "keypoints_full.jsonl",
+  "camera": {
+    "index": 0,
+    "name": "Integrated_Webcam_HD: Integrate"
+  },
+  "resolution": [
+    640,
+    480
+  ],
+  "fps_target": 30.09,
+  "measured_fps": 30.1,
+  "frames_recorded": 803,
+  "frames_with_pose": 803
+}

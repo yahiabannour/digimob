@@ -9,8 +9,9 @@
 
             Aufruf (aus sportuebungen/):  pytest        oder  python systest.py
             Welche Aufnahmen geprueft werden, steht in systest.txt.
+ author(s): Yahia Bannour
  version:   1.1.9
- date:      25.09.2026
+ date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: pytest
  info:      Ohne Kamera, Fenster und Sprachausgabe, und ohne Pose-Modell: die Keypoints sind
@@ -26,8 +27,7 @@ import sys
 
 import pytest
 
-from tools.recording_format import SUMMARY_FILE, read_poses
-from uebungen import UEBUNGEN
+from tools.recording_format import SUMMARY_FILE, erwartet_je_seite, read_poses, uebung_fuer
 
 ORDNER = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,8 +45,9 @@ def test_zaehlt_wiederholungen(pfad, pytestconfig):
     with open(os.path.join(os.path.dirname(keypoints), SUMMARY_FILE), encoding="utf-8") as f:
         summary = json.load(f)
 
-    # Wie "Aufnahmen testen": nur zaehlen (target=None), gezaehlt wird ab dem ersten Frame
-    uebung = UEBUNGEN[summary["exercise"]](target=None)
+    # Wie "Aufnahmen testen": nur zaehlen (target=None), gezaehlt wird ab dem ersten Frame, mit den
+    # Schwellen des Presets der Aufnahme (summary.json "preset", ohne Angabe "voll")
+    uebung = uebung_fuer(summary)
 
     for t, pose in read_poses(keypoints, summary["resolution"]):
         # Zeit aus der Aufnahme: das Ergebnis haengt nicht davon ab, wie schnell der Rechner
@@ -54,22 +55,19 @@ def test_zaehlt_wiederholungen(pfad, pytestconfig):
         uebung.update(pose, t)
 
     gezaehlt, erwartet = uebung.total, summary["expected_reps"]
-    # "<gezaehlt>/<erwartet>" in die Zeile der Aufnahme, vor PASSED/FAILED. write() ohne
+    # "<gezaehlt>/<erwartet> <preset>" in die Zeile der Aufnahme, vor PASSED/FAILED. write() ohne
     # Zeilenumbruch, sonst wiederholt pytest den Testnamen (darum auch -v in pytest.ini).
     # Uebungen mit zwei Seiten (Arme, Kopfdrehung) zeigen dahinter jede Seite; geprueft wird
-    # total, die kleinere der beiden, und jede Seite nur, wenn expected_per_side in der
-    # summary.json steht. Butterfly und Rotation haben nur einen Zaehler.
-    ausgabe = f"{gezaehlt}/{erwartet} "
+    # total, die kleinere der beiden, und jede Seite (erwartet_je_seite). Butterfly und Rotation
+    # haben nur einen Zaehler.
+    ausgabe = f"{gezaehlt}/{erwartet} {summary.get('preset', 'voll')} "
     if len(uebung.sides) > 1:
         ausgabe += f"(links {uebung.counter['left']}, rechts {uebung.counter['right']}) "
     reporter = pytestconfig.pluginmanager.get_plugin("terminalreporter")
     if reporter:
         reporter.write(ausgabe)
-    pro_seite = summary.get("expected_per_side")
-    if pro_seite:
-        assert (gezaehlt, uebung.counter) == (erwartet, pro_seite)
-    else:
-        assert gezaehlt == erwartet
+    pro_seite = erwartet_je_seite(uebung, erwartet, summary.get("expected_per_side"))
+    assert (gezaehlt, uebung.counter) == (erwartet, pro_seite)
 
 
 if __name__ == "__main__":

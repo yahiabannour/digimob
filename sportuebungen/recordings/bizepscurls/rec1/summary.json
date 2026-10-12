@@ -1,6 +1,7 @@
 {
   "exercise": "bizepscurls",
   "expected_reps": 3,
+  "preset": "voll",
   "started_at": "2026-09-29T12:19:14",
   "pose_model": "full",
   "video": "video.mp4",

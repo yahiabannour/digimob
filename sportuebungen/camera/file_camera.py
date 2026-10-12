@@ -18,10 +18,14 @@ class FileCamera:
     Video file: frames are delivered in real time like a live camera. getFrame() waits for the
     next frame when called too early and skips the missed frames when called too late. The
     video only advances while frames are requested (see MAX_FRAME_GAP).
+    With realtime = False (Aufnahmen testen) every call returns the next frame instead, none is
+    dropped and nothing waits, and timestamp holds that frame's time in the video (seconds). Then
+    a test gives the same result on every run, however fast the computer is.
     Image folder: each call to getFrame() loads and returns the next image from disk in order.
 
     After the last frame stop_event is set and getFrame() returns None. With loop = True playback
-    starts over at the first frame instead. rewind() starts over at any time.
+    starts over at the first frame instead, and plays counts the finished passes (the intro shows
+    the demo a fixed number of times). rewind() starts over at any time.
 
     frame_width, frame_height: every frame is scaled into this size, keeping its aspect ratio
     (black borders), like a camera opened with that size. None keeps the original size.
@@ -34,12 +38,15 @@ class FileCamera:
     """
 
     def __init__(self, path: str, mirrored: bool = False, frame_width=None, frame_height=None,
-                 verbose: bool = False):
+                 verbose: bool = False, realtime: bool = True):
         self.path = path
         self.mirrored = mirrored
+        self.realtime = realtime
+        self.timestamp = None    # realtime=False: time of the last frame in the video (s), else None
         self.frame_size = (frame_width, frame_height) if frame_width and frame_height else None
         self.verbose = verbose
         self.loop = False
+        self.plays = 0           # loop = True: how often the video has played to its end
         self.stop_event = threading.Event()
         self.current_file = None
 
@@ -98,6 +105,7 @@ class FileCamera:
         if self.is_video:
             img = self._next_video_frame()
             if img is None and self.loop:
+                self.plays += 1
                 self.rewind()
                 img = self._next_video_frame()
             if img is None:
@@ -133,6 +141,13 @@ class FileCamera:
 
     def _next_video_frame(self):
         """Read the video frame that is due now (BGR), None at the end of the video."""
+        if not self.realtime:
+            # every frame in order, with its own time in the video
+            ok, img = self._cap.read()
+            self.timestamp = self._index / self.fps
+            self._index += 1
+            return img if ok else None
+
         now = time.monotonic()
         if self._last_call is not None:
             gap = now - self._last_call

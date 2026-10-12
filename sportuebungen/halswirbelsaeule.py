@@ -2,10 +2,10 @@
 ******************************************************************************
  file:      halswirbelsaeule.py
  brief:     Software zur Bestimmung und Zählung von Kopfbewegungen für die Sportübung Halswirbelsäule
- author(s): Ezaldeen Al-Shahethi, Jörg Schneider, Fanuel Bimo Setiadi
+ author(s): Yahia Bannour
  adviser:   Tanja Wysinsky - medical advising
  version:   1.1.9
- date:      25.09.2026
+ date:      10.10.2026
  software:  Python (Version: 3.12.3)
  int. libs:
  ext. libs: Numpy (Version: 2.5.2)
@@ -15,7 +15,7 @@
 """
 import numpy as np
 from calculate_angle_distance import calculate_progress
-from uebung import Uebung
+from uebung import UEBER_ZIEL, Uebung
 
 
 class Halswirbelsaeule(Uebung):
@@ -31,9 +31,14 @@ class Halswirbelsaeule(Uebung):
     # Schwellwerte der Kopfdrehung in Grad, gelten für beide Seiten
     min_angle = 15      # bis hier gilt der Kopf als mittig (Balken leer)
     max_angle = 35      # ab hier wird die Drehung gezählt (Balken voll)
+    # Regler: ab welcher Drehung gezaehlt wird (Ziel). min_angle ist nur der Balkenanfang
+    schwellen = {"max_angle": "Drehung zählt ab"}
+    bereich = {"max_angle": (20, 80)}          # ueber min_angle (Balkenanfang)
+    # Einfach: rund 20 % weniger weit drehen (mit der medizinischen Beratung abstimmen)
+    einfach = {"max_angle": 28}
 
-    def __init__(self, target=5):
-        super().__init__(target)
+    def __init__(self, target=5, schwellen=None):
+        super().__init__(target, schwellen)
         self.direction = None             # aktuelle Richtung ("links"/"rechts"), bleibt bis zur Gegenseite
         self.previous_direction = None    # zuletzt gezählte Richtung
 
@@ -59,7 +64,7 @@ class Halswirbelsaeule(Uebung):
         # Fortschritt der Kopfdrehung zu dieser Seite: leer in der Mitte (bis min_angle) und bei
         # Drehung zur Gegenseite, voll ab der Zählschwelle (max_angle)
         turn = self.rotation if side == "left" else -self.rotation
-        return calculate_progress(turn, self.min_angle, self.max_angle)
+        return calculate_progress(turn, self.min_angle, self.max_angle, UEBER_ZIEL)
 
     @staticmethod
     def head_rotation(landmarks, image_width, image_height):
@@ -72,6 +77,8 @@ class Halswirbelsaeule(Uebung):
 
         # Vektor 1: zwischen den Augen (rechtes -> linkes Auge)
         vector_1 = left_eye - right_eye
+        if not np.any(vector_1):
+            raise ValueError("Kopfdrehung nicht bestimmbar: beide Augen auf einem Punkt")
         # Vektor 2: senkrecht zu Vektor 1 durch die Nase (vom Lotfußpunkt auf der Augenlinie zur Nase)
         foot = right_eye + np.dot(nose - right_eye, vector_1) / np.dot(vector_1, vector_1) * vector_1
         vector_2 = nose - foot
