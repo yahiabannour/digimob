@@ -19,7 +19,7 @@ Bizepscurls, Butterfly, Rotation im Sitzen und Halswirbelsäule. Vor jeder Übun
 
 DigiMob ist ein Projekt von Prof. Hanno Homann an der Hochschule Hannover. Tanja Wysinsky, Pflegekraft an der
 Medizinischen Hochschule Hannover, hat die App in ihrer Bachelorarbeit (Sommersemester 2025) eingesetzt und die
-Übungen medizinisch beraten.
+Übungen medizinisch beraten. Sie nutzt die App bis heute weiter.
 
 Ich habe das Projekt im Herbst 2026 erweitert. Die Commit-Historie zeigt, wer was beigetragen hat.
 
