@@ -19,6 +19,7 @@
                                             (keypoints), weitere Modelle erzeugt tools/extract_keypoints.py
                                             nachtraeglich aus dem Video.
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs:

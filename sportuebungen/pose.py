@@ -6,6 +6,7 @@
             die Uebungen, systest.py und die Aufnahme-Tools rechnen nur hiermit. Woher die
             Landmarks kommen (heute mediapipe_modelle.py), ist austauschbar.
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  info:      Aus mediapipe_modelle.py hierher verschoben, unveraendert: die Winkelgrenzen der

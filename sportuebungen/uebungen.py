@@ -3,6 +3,7 @@
  file:      uebungen.py
  brief:     Die einzige Liste der Uebungen. Neue Uebung: Datei anlegen (Klasse von Uebung aus
             uebung.py ableiten), hier in UEBUNGEN und OP_ARTEN eintragen.
+ author(s): Yahia Bannour
  version:   1.1.9
  date:      25.09.2026
  software:  Python (Version: 3.12)

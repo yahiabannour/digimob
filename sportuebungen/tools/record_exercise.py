@@ -5,6 +5,7 @@
             Videomodus der App (videomodus.txt), eine Zusammenfassung mit Ground Truth und pro Frame die
             MediaPipe-Pose-Keypoints fuer Systemtests. Ohne Tkinter, Sprachausgabe und Zoom.
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: OpenCV (Version: 5.0.0.93), Mediapipe (Version: 1.0.1, Tasks-API)

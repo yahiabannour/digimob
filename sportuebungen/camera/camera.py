@@ -1,3 +1,15 @@
+"""
+******************************************************************************
+ file:      camera/camera.py
+ brief:     Live-Webcam als Bildquelle: ein Hintergrund-Thread liest die Kamera, getFrame()
+            liefert das neueste Bild (RGB, ungespiegelt). Gleiche Schnittstelle wie FileCamera.
+ author(s): Yahia Bannour
+ version:   1.1.9
+ date:      10.10.2026
+ software:  Python (Version: 3.12)
+ ext. libs: OpenCV
+******************************************************************************
+"""
 import logging
 
 import cv2

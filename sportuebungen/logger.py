@@ -4,7 +4,7 @@
  brief:     Software zur Anzeige der Logging-Dateien
  author(s): Tobias Hertzler, Fanuel Bimo Setiadi
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.8
+ version:   1.1.9
  date:      10.12.2025
  software:  Python (Version: 3.11.2)
  int. libs:

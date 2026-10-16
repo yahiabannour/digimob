@@ -5,6 +5,7 @@
             einer gezaehlten Wiederholung, kurzes Stehenlassen ohne Messwert, hoechster Punkt der
             laufenden Wiederholung. Hauptprogramm.py zeichnet nur, was update() liefert.
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  info:      Ein BalkenZustand je Balken (linker Arm, rechter Arm, ...). Die Uhr ist austauschbar,

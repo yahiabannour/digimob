@@ -4,7 +4,7 @@
  brief:     Software zur Sprachausgabe
  author(s): Yahia Bannour
  adviser:   Tanja Wysinsky - medical advising
- version:   1.1.8
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (3.11.2)
  int. libs: threading

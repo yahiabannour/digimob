@@ -5,6 +5,7 @@
             Pose-Modell (POSE_MODELS, nur noch full). So lassen sich die Keypoints neu erzeugen,
             ohne neu aufzunehmen: das Video ist die Grundlage, die Keypoints sind daraus abgeleitet.
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: OpenCV (Version: 5.0.0.93), Mediapipe (Version: 1.0.1, Tasks-API)

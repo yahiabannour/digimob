@@ -1,3 +1,15 @@
+"""
+******************************************************************************
+ file:      camera/file_camera.py
+ brief:     Videodatei oder Bildordner als Bildquelle mit derselben Schnittstelle wie Camera:
+            in Echtzeit wie eine Kamera oder Bild fuer Bild (Aufnahmen testen).
+ author(s): Yahia Bannour
+ version:   1.1.9
+ date:      10.10.2026
+ software:  Python (Version: 3.12)
+ ext. libs: OpenCV
+******************************************************************************
+"""
 import cv2
 import os
 import glob

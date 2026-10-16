@@ -7,6 +7,7 @@
 
             Aufruf (aus sportuebungen/):  pytest   (laeuft zusammen mit systest.py)
  author(s): Yahia Bannour
+ version:   1.1.9
  date:      10.10.2026
  software:  Python (Version: 3.12)
  ext. libs: pytest, numpy, opencv
