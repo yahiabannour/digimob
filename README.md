@@ -17,9 +17,12 @@ Bizepscurls, Butterfly, Rotation im Sitzen und Halswirbelsäule. Vor jeder Übun
 
 ## Hintergrund
 
-DigiMob entstand in der Bachelorarbeit von Tanja Wysinsky (Sommersemester 2025) an der Hochschule Hannover und
-wurde von Jörg Schneider und Hanno Homann betreut und weiterentwickelt. Ich habe das Projekt im Herbst 2026
-erweitert. Die Commit-Historie zeigt, wer was beigetragen hat.
+Die erste Version von DigiMob entwickelten Ezaldeen Al-Shahethi, Jörg Schneider und Fanuel Bimo Setiadi an der
+Hochschule Hannover, mit Beiträgen von Mazen Al-Hakami, Abdulatif Mujali und Tobias Hertzler; weitere Commits
+stammen von Hanno Homann. Tanja Wysinsky, Pflegekraft an der Medizinischen Hochschule Hannover, hat die App in ihrer
+Bachelorarbeit (Sommersemester 2025) eingesetzt und die Übungen medizinisch beraten.
+
+Ich habe das Projekt im Herbst 2026 erweitert. Die Commit-Historie zeigt, wer was beigetragen hat.
 
 ## Meine Beiträge
 
