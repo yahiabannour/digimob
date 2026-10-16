@@ -25,7 +25,9 @@ sportuebungen/docs
 CLAUDE.md
 sportuebungen/changelog.md
 
-*.db / Benutzerdaten/
+*.db
+Benutzerdaten/
+*.onnx
 # Personal data and local files
 sportuebungen/camera/test.png
 *.tar.gz
