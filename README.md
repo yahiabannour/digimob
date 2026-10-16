@@ -1,75 +1,80 @@
-# DigiMob – camera-based rehabilitation exercises
+# DigiMob – kamerabasierte Reha-Übungen
 
-A desktop application that guides patients through rehabilitation exercises after abdominal or chest surgery.
-A webcam tracks the patient's body with **MediaPipe pose estimation**, the app **counts repetitions from joint
-angles** per side, shows the progress as bars next to the live video, and gives **spoken feedback in German**
-(Piper text-to-speech). No patient data is stored.
+Eine Desktop-Anwendung, die Patientinnen und Patienten nach Bauch- oder Brust-Operationen durch Reha-Übungen führt.
+Eine Webcam erfasst den Körper mit **MediaPipe-Posenerkennung**. Die App **zählt Wiederholungen anhand von
+Gelenkwinkeln**, getrennt für jede Seite, zeigt den Fortschritt als Balken neben dem Livebild und gibt
+**gesprochenes Feedback** (Piper Text-to-Speech). Es werden keine Patientendaten gespeichert.
 
-<!-- Add a screenshot here: docs/screenshot.png -->
+| Übung mit erkannten Körperpunkten | Übungsauswahl mit einstellbaren Schwellen |
+|---|---|
+| ![Übungsseite](docs/uebung.jpg) | ![Auswahlseite](docs/auswahl.jpg) |
 
-The app covers eight exercises: shoulder abduction, lateral raise, shoulder flexion, shoulder mobilisation,
-biceps curls, butterfly, seated shoulder rotation and neck rotation. Before each exercise a rendered 3D demo
-shows the movement.
+*Die Screenshots verwenden das 3D-Demovideo als Kamerabild, daher ist keine echte Person zu sehen.*
 
-## Background
+Die App umfasst acht Übungen: Abduktion Schulter, Seitheben, Flexion Schulter, Mobilisation Schulter,
+Bizepscurls, Butterfly, Rotation im Sitzen und Halswirbelsäule. Vor jeder Übung zeigt ein gerendertes
+3D-Video den Bewegungsablauf.
 
-DigiMob was started in the bachelor thesis of Tanja Wysinsky (summer 2025) at Hochschule Hannover and
-maintained by Jörg Schneider and Hanno Homann. I extended it in autumn 2026. The commit
-history shows who did what.
+## Hintergrund
 
-## My contributions
+DigiMob entstand in der Bachelorarbeit von Tanja Wysinsky (Sommersemester 2025) an der Hochschule Hannover und
+wurde von Jörg Schneider und Hanno Homann betreut und weiterentwickelt. Ich habe das Projekt im Herbst 2026
+erweitert. Die Commit-Historie zeigt, wer was beigetragen hat.
 
-- **Refactored the exercise logic** – the eight exercise classes now share one base class (`uebung.py`);
-  each exercise file only holds its texts and thresholds, and `uebungen.py` is the single list of exercises
-- **Separated the exercise loop from the GUI** (`uebungslauf.py`) and moved pose detection to a background
-  thread – frame rate went from 6.6 to 9.8 fps (abduction) and from 6.0 to 13.7 fps (neck rotation)
-- **Camera abstraction** (`camera/`) – the app runs on a live webcam or replays recorded videos
-- **Recording tools** (`tools/`) – record exercises with hand-entered ground truth and store the pose keypoints
-  as JSONL; 58 recordings of all eight exercises are included
-- **Automated tests** (94 tests with pytest)
-  - unit tests for the maths, the thresholds, the camera and the threaded loop
-  - a system test that replays every recording into the counters and requires the exact repetition count
-- **More robust counting** – median filtering, landmark visibility checks, hysteresis and hold times against
-  MediaPipe jitter
-- **Adjustable thresholds** per exercise with "full" and "easy" presets for weaker patients, saved atomically
-- **Data minimisation** – removed the user database and stored progress, so the app keeps no patient data
-- **GUI redesign** – a progress bar per arm with countdown and target line, plus rendered 3D instruction videos
-  instead of photos
-- Fixed the speech output for Python 3.12 and made spoken messages cancellable
+## Meine Beiträge
 
-## How it works
+- **Übungslogik refaktoriert** – die acht Übungsklassen teilen sich eine Basisklasse (`uebung.py`); jede
+  Übungsdatei enthält nur noch Texte und Schwellen, und `uebungen.py` ist die einzige Liste aller Übungen
+- **Übungsablauf von der Oberfläche getrennt** (`uebungslauf.py`) und die Posenerkennung in einen
+  Hintergrund-Thread verlegt – die Bildrate stieg von 6,6 auf 9,8 fps (Abduktion) und von 6,0 auf 13,7 fps
+  (Halswirbelsäule)
+- **Kamera-Abstraktion** (`camera/`) – die App läuft mit einer Live-Webcam oder spielt aufgezeichnete Videos ab
+- **Aufnahme-Werkzeuge** (`tools/`) – Übungen mit von Hand eingetragener Soll-Anzahl aufnehmen und die
+  Körperpunkte als JSONL speichern; 58 Aufnahmen aller acht Übungen sind enthalten
+- **Automatisierte Tests** (94 Tests mit pytest)
+  - Unit-Tests für die Mathematik, die Schwellen, die Kamera und den Thread-Ablauf
+  - ein Systemtest, der jede Aufnahme in die Zähler einspielt und die exakte Wiederholungszahl verlangt
+- **Robustere Zählung** – Medianfilter, Prüfung der Landmark-Sichtbarkeit, Hysterese und Haltezeiten gegen das
+  Zittern von MediaPipe
+- **Einstellbare Schwellen** pro Übung mit den Voreinstellungen „Voll“ und „Einfach“ für schwächere Patienten,
+  ausfallsicher gespeichert
+- **Datensparsamkeit** – Benutzerdatenbank und gespeicherter Fortschritt entfernt, die App speichert keine
+  Patientendaten
+- **Neue Oberfläche** – ein Fortschrittsbalken pro Arm mit Countdown und Ziellinie, dazu gerenderte
+  3D-Anleitungsvideos statt Fotos
+- Sprachausgabe für Python 3.12 repariert und gesprochene Meldungen abbrechbar gemacht
+
+## Funktionsweise
 
 ```
-camera frame ─► zoom (optional) ─► MediaPipe pose ─► exercise.update(pose)
-                                                           │
-            GUI: video + progress bars ◄── speech feedback ◄┘
+Kamerabild ─► Zoom (optional) ─► MediaPipe-Pose ─► uebung.update(pose)
+                                                          │
+       Oberfläche: Video + Balken ◄── Sprachausgabe ◄─────┘
 ```
 
-Each exercise turns the pose into a measurement (for example the hip–shoulder–elbow angle) and counts a
-repetition when it crosses the target and comes back. The exercises are pure Python and don't import
-MediaPipe, so the tests can replay recorded keypoints without a camera.
+Jede Übung berechnet aus der Pose einen Messwert (zum Beispiel den Winkel Hüfte–Schulter–Ellbogen) und zählt eine
+Wiederholung, wenn das Ziel erreicht wird und die Bewegung zurückkehrt. Die Übungen sind reines Python ohne
+MediaPipe-Import, deshalb können die Tests aufgezeichnete Körperpunkte ohne Kamera abspielen.
 
-## Running it
+## Starten
 
-Requirements: Python 3.12, a webcam and audio output.
+Voraussetzungen: Python 3.12, eine Webcam und eine Audioausgabe.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-The German voice model is too large for git. Download `de_DE-thorsten-low.onnx` from
-[Piper voices](https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/low) into
-`sportuebungen/stimmen/`.
+Das deutsche Stimmmodell ist zu groß für git. `de_DE-thorsten-low.onnx` von
+[Piper voices](https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/low) herunterladen und nach
+`sportuebungen/stimmen/` legen.
 
 ```bash
 cd sportuebungen
-python Hauptprogramm.py              # add --entwickler to replay recordings instead of the webcam
-pytest                               # run the tests (no camera needed)
+python Hauptprogramm.py              # mit --entwickler lassen sich Aufnahmen statt der Webcam abspielen
+pytest                               # Tests ausführen (keine Kamera nötig)
 ```
 
-The user interface and the code comments are in German.
-
-## Tech stack
+## Technologien
 
 Python 3.12 · MediaPipe · OpenCV · Tkinter · Piper TTS · NumPy · pytest
