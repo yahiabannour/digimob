@@ -1,3 +1,5 @@
+**Deutsch** | [English](README.en.md)
+
 # DigiMob – kamerabasierte Reha-Übungen
 
 Eine Desktop-Anwendung, die Patientinnen und Patienten nach Bauch- oder Brust-Operationen durch Reha-Übungen führt.
