@@ -26,6 +26,14 @@ Ich habe das Projekt im Herbst 2026 erweitert. Die Commit-Historie zeigt, wer wa
 
 ## Meine Beiträge
 
+- **Zählalgorithmen für alle acht Übungen neu entwickelt** – Messung über Gelenkwinkel bzw. Abstände, Zählung
+  mit Hysterese, Haltezeiten und Medianfilter, getrennt für jede Körperseite
+- **Live-Tests mit Frau Wysinsky (MHH)** – gemeinsam aufgenommene Übungen, auch mit nachgestellten
+  Patientenbewegungen; an diesen Aufnahmen habe ich die Algorithmen und Schwellen entwickelt und geprüft, und der
+  Systemtest spielt sie bei jedem Lauf erneut ab
+- **3D-Anleitungsvideos mit Blender** – vorher zeigte die App nur Beispielfotos. Jetzt gibt es für jede Übung
+  ein gerendertes Video: eine 3D-Figur halb sitzend im Krankenbett, in einem nachgebauten Krankenzimmer. Die
+  Bewegungsabläufe sind in Python gescriptet, das Tempo stammt aus den echten Aufnahmen
 - **Übungslogik refaktoriert** – die acht Übungsklassen teilen sich eine Basisklasse (`uebung.py`); jede
   Übungsdatei enthält nur noch Texte und Schwellen, und `uebungen.py` ist die einzige Liste aller Übungen
 - **Übungsablauf von der Oberfläche getrennt** (`uebungslauf.py`) und die Posenerkennung in einen
@@ -37,14 +45,11 @@ Ich habe das Projekt im Herbst 2026 erweitert. Die Commit-Historie zeigt, wer wa
 - **Automatisierte Tests** (94 Tests mit pytest)
   - Unit-Tests für die Mathematik, die Schwellen, die Kamera und den Thread-Ablauf
   - ein Systemtest, der jede Aufnahme in die Zähler einspielt und die exakte Wiederholungszahl verlangt
-- **Robustere Zählung** – Medianfilter, Prüfung der Landmark-Sichtbarkeit, Hysterese und Haltezeiten gegen das
-  Zittern von MediaPipe
 - **Einstellbare Schwellen** pro Übung mit den Voreinstellungen „Voll“ und „Einfach“ für schwächere Patienten,
   ausfallsicher gespeichert
 - **Datensparsamkeit** – Benutzerdatenbank und gespeicherter Fortschritt entfernt, die App speichert keine
   Patientendaten
-- **Neue Oberfläche** – ein Fortschrittsbalken pro Arm mit Countdown und Ziellinie, dazu gerenderte
-  3D-Anleitungsvideos statt Fotos
+- **Neue Oberfläche** – ein Fortschrittsbalken pro Arm mit Countdown und Ziellinie
 - Sprachausgabe für Python 3.12 repariert und gesprochene Meldungen abbrechbar gemacht
 
 ## Funktionsweise
@@ -80,4 +85,4 @@ pytest                               # Tests ausführen (keine Kamera nötig)
 
 ## Technologien
 
-Python 3.12 · MediaPipe · OpenCV · Tkinter · Piper TTS · NumPy · pytest
+Python 3.12 · MediaPipe · OpenCV · Tkinter · Piper TTS · NumPy · pytest · Blender
