@@ -1,0 +1,20 @@
+<resources>
+    <string name="main_menu_title">Hauptmenü</string>
+    <string name="choose_exercises">Übungen wählen</string>
+    <string name="recording_test">Aufnahmen testen</string>
+    <string name="quit">Beenden</string>
+
+    <string name="op_type_title">Operationsart</string>
+    <string name="post_op_day">Postoperativer Tag:</string>
+    <plurals name="repetitions">
+        <item quantity="one">%1$d Wiederholung</item>
+        <item quantity="other">%1$d Wiederholungen</item>
+    </plurals>
+
+    <string name="selection_title">Nach %1$s</string>
+    <string name="selection_hint">Übungen wählen:</string>
+    <string name="start_selected">Speichern und starten</string>
+    <string name="start_all">Alle automatisch starten</string>
+    <string name="error_title">Nicht gespeichert</string>
+    <string name="ok">OK</string>
+</resources>

@@ -99,19 +99,19 @@ Python 3.12, a webcam and audio output.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r python/requirements.txt
 ```
 
 ### 2. Download the Voice Model
 
 The German voice model is too large for git. Download `de_DE-thorsten-low.onnx` from
 [Piper voices](https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/low) into
-`sportuebungen/stimmen/`.
+`python/stimmen/`.
 
 ### 3. Run the App
 
 ```bash
-cd sportuebungen
+cd python
 python Hauptprogramm.py
 ```
 
@@ -121,7 +121,7 @@ webcam.
 ### 4. Run the Tests
 
 ```bash
-cd sportuebungen
+cd python
 pytest
 ```
 

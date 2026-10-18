@@ -1,0 +1,35 @@
+<resources>
+    <string name="exercise_abduktion">Abduktion Schulter</string>
+    <string name="exercise_bizepscurls">Bizepscurls</string>
+    <string name="exercise_butterfly">Butterfly</string>
+    <string name="exercise_flexion_schulter">Flexion Schulter</string>
+    <string name="exercise_halswirbelsaeule">Halswirbelsäule</string>
+    <string name="exercise_mobilisation_schulter">Mobilisation Schulter</string>
+    <string name="exercise_rotation">Rotation im Sitzen</string>
+    <string name="exercise_seitenheben">Seitheben</string>
+
+    <string name="preset_voll">Voll</string>
+    <string name="preset_einfach">Einfach</string>
+    <string name="preset_equal">Voll = Einfach</string>
+
+    <string name="op_bauch">Bauch-OP</string>
+    <string name="op_brust">Brust-OP</string>
+
+    <string name="day_1">Tag 1</string>
+    <string name="day_2">Tag 2</string>
+    <string name="day_3">Tag 3</string>
+    <string name="day_4">Tag 4</string>
+    <string name="day_5">ab Tag 5</string>
+
+    <string name="message_start">Jetzt können Sie mit dieser Übung starten</string>
+    <string name="message_target_praise">Super, versuchen Sie %1$d mal zu schaffen!</string>
+    <string name="message_target">Versuchen Sie %1$d mal zu schaffen!</string>
+    <string name="message_done">Prima, gute Leistung!</string>
+    <string name="message_count_only">Aufnahmen-Test: nur zählen</string>
+
+    <string name="error_disk_full">Der Speicher ist voll, die Auswahl wurde nicht gespeichert.</string>
+    <string name="error_not_found">Die Datei wurde nicht gefunden.</string>
+    <string name="error_unknown">Die Auswahl konnte nicht gespeichert werden.</string>
+
+    <string name="back">Zurück</string>
+</resources>

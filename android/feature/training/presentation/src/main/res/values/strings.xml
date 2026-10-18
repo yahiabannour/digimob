@@ -1,0 +1,33 @@
+<resources>
+    <string name="training_title">Reha-Übungen</string>
+    <string name="exercise_progress">Übung %1$d von %2$d</string>
+    <string name="word_remaining">noch</string>
+    <string name="word_counted">gezählt</string>
+    <string name="bar_description">%1$s %2$d</string>
+
+    <string name="pause">Pause</string>
+    <string name="paused">Angehalten</string>
+    <string name="keypoints_on">Keypoints an</string>
+    <string name="keypoints_off">Keypoints aus</string>
+    <string name="zoom_on">Zoom an</string>
+    <string name="zoom_off">Zoom aus</string>
+    <string name="stop">Stop</string>
+
+    <string name="error_title">Fehler</string>
+    <string name="error_no_camera">Die Kamera konnte nicht geöffnet werden.</string>
+    <string name="error_camera_failed">Die Kamera liefert keine Bilder mehr.</string>
+    <string name="error_pose_failed">Die Übung wurde wegen eines Fehlers beendet (Details im Log).</string>
+    <string name="error_video_unreadable">Das Video ist nicht lesbar.</string>
+    <string name="error_permission">Ohne Erlaubnis für die Kamera kann die Übung nicht starten. Bitte in den Einstellungen des Tablets erlauben.</string>
+
+    <string name="recording_test_title">Aufnahmen testen</string>
+    <string name="recording_running">%1$s (%2$d von %3$d)</string>
+    <string name="recording_done">Fertig: %1$d von %2$d OK</string>
+    <string name="recording_ok">OK</string>
+    <string name="recording_deviates">abweichend</string>
+    <string name="recording_no_truth">ohne Erwartung</string>
+    <string name="recording_unreadable">Video nicht lesbar</string>
+    <string name="recording_counts">gezählt %1$s, erwartet %2$s</string>
+    <string name="recording_side_counts">links %1$d, rechts %2$d</string>
+    <string name="recording_missing">videomodus.txt fehlt im App-Ordner (Android/data/de.mhh.digimob/files/).</string>
+</resources>

@@ -100,19 +100,19 @@ Python 3.12, eine Webcam und eine Audioausgabe.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r python/requirements.txt
 ```
 
 ### 2. Stimmmodell herunterladen
 
 Das deutsche Stimmmodell ist zu groß für git. `de_DE-thorsten-low.onnx` von
 [Piper voices](https://huggingface.co/rhasspy/piper-voices/tree/main/de/de_DE/thorsten/low) herunterladen und nach
-`sportuebungen/stimmen/` legen.
+`python/stimmen/` legen.
 
 ### 3. App starten
 
 ```bash
-cd sportuebungen
+cd python
 python Hauptprogramm.py
 ```
 
@@ -121,7 +121,7 @@ Mit `--entwickler` erscheint der Knopf **„Aufnahmen testen“**, der Aufnahmen
 ### 4. Tests ausführen
 
 ```bash
-cd sportuebungen
+cd python
 pytest
 ```
 

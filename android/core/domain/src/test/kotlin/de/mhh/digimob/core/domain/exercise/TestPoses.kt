@@ -1,0 +1,75 @@
+package de.mhh.digimob.core.domain.exercise
+
+import kotlin.math.cos
+import kotlin.math.sin
+
+/**
+ * Kuenstliche Pose wie in einheitentest.py: Oberkoerper senkrecht, je Arm der Winkel
+ * Huefte-Schulter-Ellbogen (arm) und Handgelenk-Ellbogen-Schulter (elbow) in Grad.
+ */
+fun armPose(
+    arm: Pair<Double, Double> = 20.0 to 20.0,
+    elbow: Pair<Double, Double> = 180.0 to 180.0,
+    visibility: Double? = 1.0,
+    leftVisibility: Double? = visibility
+): Pose {
+    val points = MutableList(33) { Point(0.5, 0.5) }
+    val vis = MutableList(33) { visibility }
+    listOf(Side.LEFT, Side.RIGHT).forEachIndexed { k, side ->
+        val sx = if (side == Side.LEFT) 0.4 else 0.6
+        val sign = if (side == Side.LEFT) -1 else 1     // Arme gehen nach aussen
+        val shoulder = Point(sx, 0.4)
+        val hip = Point(sx, 0.8)
+        val a = Math.toRadians(if (k == 0) arm.first else arm.second)
+        val upperX = sign * sin(a)
+        val upperY = cos(a)                              // Schulter -> Ellbogen, y nach unten
+        val el = Point(shoulder.x + 0.2 * upperX, shoulder.y + 0.2 * upperY)
+        // Unterarm: um (180 - elbow) Grad gegen den Oberarm gedreht
+        val b = Math.toRadians(180 - if (k == 0) elbow.first else elbow.second)
+        val fx = upperX * cos(b) - upperY * sin(b)
+        val fy = upperX * sin(b) + upperY * cos(b)
+        val wr = Point(el.x + 0.2 * fx, el.y + 0.2 * fy)
+        points[Landmarks.HUEFTE.getValue(side)] = hip
+        points[Landmarks.SCHULTER.getValue(side)] = shoulder
+        points[Landmarks.ELLBOGEN.getValue(side)] = el
+        points[Landmarks.HANDGELENK.getValue(side)] = wr
+        if (side == Side.LEFT) {
+            listOf(Landmarks.HUEFTE, Landmarks.SCHULTER, Landmarks.ELLBOGEN, Landmarks.HANDGELENK)
+                .forEach { vis[it.getValue(side)] = leftVisibility }
+        }
+    }
+    return Pose(points.mapIndexed { i, p -> Landmark(p.x, p.y, 0.0, vis[i], 1.0) }, 640, 480)
+}
+
+fun arms(left: Double, right: Double = left, visibility: Double? = 1.0) =
+    armPose(arm = left to right, visibility = visibility)
+
+/**
+ * Gesicht (Landmarks 0-6), um [degrees] um die senkrechte Achse gedreht; > 0 dreht die Nase zur
+ * linken Seite des Patienten (im ungespiegelten Bild nach rechts, x waechst).
+ */
+fun facePose(degrees: Double, eyesApart: Boolean = true): Pose {
+    val w = 640.0
+    val half = if (eyesApart) 0.05 else 0.0
+    // Kopfmitte bei x = 0.5; Augen auf Hoehe 0.4, Nase darunter und naeher an der Kamera (z < 0)
+    val face = listOf(
+        Triple(0.0, 0.45, -0.05),                                          // 0 Nase
+        Triple(half - 0.01, 0.4, 0.0), Triple(half, 0.4, 0.0), Triple(half + 0.01, 0.4, 0.0),        // 1-3 linkes Auge
+        Triple(-half + 0.01, 0.4, 0.0), Triple(-half, 0.4, 0.0), Triple(-half - 0.01, 0.4, 0.0)      // 4-6 rechtes Auge
+    )
+    val r = Math.toRadians(degrees)
+    val rotated = face.map { (x, y, z) ->
+        // Drehung in der x-z-Ebene (z in Einheiten der Bildbreite, wie x)
+        Landmark(0.5 + x * cos(r) - z * sin(r), y, x * sin(r) + z * cos(r), 1.0, 1.0)
+    }
+    val rest = List(33 - 7) { Landmark(0.5, 0.8, 0.0, 1.0, 1.0) }
+    return Pose(rotated + rest, w.toInt(), 480)
+}
+
+/** Frames im Abstand 1/fps in die Uebung; null = keine Pose. */
+fun <E : Exercise> E.run(frames: List<Pose?>, fps: Double = 30.0, t0: Double = 0.0): E {
+    frames.forEachIndexed { i, pose -> update(pose, t0 + i / fps) }
+    return this
+}
+
+operator fun Pose.times(n: Int): List<Pose> = List(n) { this }

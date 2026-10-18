@@ -1,0 +1,24 @@
+<resources>
+    <!-- Gesprochen: einfache Woerter mit Absicht (changelog 1.1.4) -->
+    <string name="speech_intro_abduktion">Sie fangen jetzt mit der Übung Abduktion an. Bitte legen Sie die Hände unten neben den Körper, damit die Übung starten kann.</string>
+    <string name="speech_intro_bizepscurls">Sie fangen jetzt mit der Übung Bizepscurls an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <!-- "Batterflei": so sprach die Piper-Stimme das Wort richtig aus; mit Android TTS am Geraet pruefen -->
+    <string name="speech_intro_butterfly">Sie fangen jetzt mit der Übung Batterflei an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <string name="speech_intro_flexion_schulter">Sie fangen jetzt mit der Übung Flexion Schulter an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <string name="speech_intro_halswirbelsaeule">Sie fangen jetzt mit der Übung Halswirbelsäule an. Bitte halten Sie den Kopf ruhig in der Mitte, damit die Übung starten kann.</string>
+    <string name="speech_intro_mobilisation_schulter">Sie fangen jetzt mit der Übung Mobilisation Schulter an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <string name="speech_intro_rotation">Sie fangen jetzt mit der Übung Rotation an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <string name="speech_intro_seitenheben">Sie fangen jetzt mit der Übung Seitheben an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+
+    <plurals name="speech_start">
+        <item quantity="one">Super, versuchen Sie %1$d Wiederholung zu schaffen</item>
+        <item quantity="other">Super, versuchen Sie %1$d Wiederholungen zu schaffen</item>
+    </plurals>
+    <string name="speech_halfway">Super, die Hälfte ist geschafft</string>
+    <string name="speech_remaining">noch %1$d</string>
+    <string name="speech_last">Letzte Wiederholung</string>
+    <plurals name="speech_done">
+        <item quantity="one">Tolle Arbeit! Sie haben %1$d Wiederholung geschafft</item>
+        <item quantity="other">Tolle Arbeit! Sie haben alle %1$d Wiederholungen geschafft</item>
+    </plurals>
+</resources>
