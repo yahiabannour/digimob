@@ -11,9 +11,12 @@ import java.util.Locale
 import java.util.UUID
 
 /**
- * Sprachausgabe mit der deutschen Stimme des Geraets (sprachausgabe.py, statt Piper). Ansagen
- * stehen hintereinander an (QUEUE_ADD), stop() bricht die laufende ab und verwirft die wartenden,
- * wie das Hochzaehlen von generation auf dem Desktop. Bis die Stimme geladen ist, warten die Ansagen.
+ * Sprachausgabe auf Deutsch (sprachausgabe.py, statt Piper). Ansagen stehen hintereinander an
+ * (QUEUE_ADD), stop() bricht die laufende ab und verwirft die wartenden, wie das Hochzaehlen von
+ * generation auf dem Desktop. Bis die Stimme geladen ist, warten die Ansagen.
+ * Stimme: Googles maennliche deutsche Stimme "deb", offline (vom Nutzer am Tablet ausgewaehlt: die
+ * Samsung-Stimme sprach "jetzt" falsch). Fehlt sie, Googles deutsche Standardstimme; fehlt Google
+ * oder dessen Deutsch, die Standardstimme des Geraets (das Log nennt die Stimme).
  */
 class AndroidSpeaker(private val context: Context) : Speaker {
 
@@ -22,17 +25,27 @@ class AndroidSpeaker(private val context: Context) : Speaker {
     private val pending = mutableListOf<String>()
     private var ready = false
 
-    private val tts: TextToSpeech = TextToSpeech(context) { status -> onInit(status) }
+    @Volatile
+    private var tts: TextToSpeech = TextToSpeech(context, { status -> onInit(status, preferred = true) }, GOOGLE_ENGINE)
 
-    private fun onInit(status: Int) {
+    private fun onInit(status: Int, preferred: Boolean) {
+        val german = status == TextToSpeech.SUCCESS && tts.setLanguage(Locale.GERMANY).let {
+            it != TextToSpeech.LANG_MISSING_DATA && it != TextToSpeech.LANG_NOT_SUPPORTED
+        }
+        // Ist Google nicht installiert, nimmt Android selbst die Standardstimme; kann Google kein Deutsch:
+        if (preferred && !german) {
+            log.w { "Keine deutsche Google-Stimme (Status $status), Standardstimme des Geraets" }
+            tts.shutdown()
+            tts = TextToSpeech(context) { onInit(it, preferred = false) }
+            return
+        }
         if (status != TextToSpeech.SUCCESS) {
             log.e { "TextToSpeech nicht verfuegbar ($status), es wird nichts gesprochen" }
             return
         }
-        val language = tts.setLanguage(Locale.GERMANY)
-        if (language == TextToSpeech.LANG_MISSING_DATA || language == TextToSpeech.LANG_NOT_SUPPORTED) {
-            log.e { "Keine deutsche Stimme installiert ($language)" }
-        }
+        if (!german) log.e { "Keine deutsche Stimme installiert" }
+        if (preferred) tts.voices.orEmpty().firstOrNull { it.name == GOOGLE_VOICE }?.let { tts.voice = it }
+        log.i { "Stimme ${tts.voice?.name}" }
         synchronized(lock) {
             ready = true
             pending.forEach(::speak)
@@ -78,5 +91,10 @@ class AndroidSpeaker(private val context: Context) : Speaker {
         ExerciseId.MOBILISATION_SCHULTER -> R.string.speech_intro_mobilisation_schulter
         ExerciseId.ROTATION -> R.string.speech_intro_rotation
         ExerciseId.SEITENHEBEN -> R.string.speech_intro_seitenheben
+    }
+
+    private companion object {
+        const val GOOGLE_ENGINE = "com.google.android.tts"
+        const val GOOGLE_VOICE = "de-de-x-deb-local"
     }
 }

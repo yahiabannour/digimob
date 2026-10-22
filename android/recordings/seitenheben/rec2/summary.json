@@ -1,0 +1,23 @@
+{
+    "exercise": "seitenheben",
+    "expected_reps": 0,
+    "expected_per_side": {
+        "left": 0,
+        "right": 5
+    },
+    "preset": "voll",
+    "started_at": "2026-10-21T12:08:00",
+    "pose_model": "full",
+    "video": "video.mp4",
+    "keypoints": "keypoints_full.jsonl",
+    "camera": {
+        "name": "samsung SM-X210"
+    },
+    "resolution": [
+        640,
+        480
+    ],
+    "measured_fps": 10.6,
+    "frames_recorded": 209,
+    "frames_with_pose": 166
+}

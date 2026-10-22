@@ -13,7 +13,7 @@ import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 import de.mhh.digimob.feature.menu.presentation.MainMenuRoute
 import de.mhh.digimob.feature.menu.presentation.MenuGraphRoute
 import de.mhh.digimob.feature.menu.presentation.menuGraph
-import de.mhh.digimob.feature.training.presentation.RecordingTestRoute
+import de.mhh.digimob.feature.training.presentation.RecordingRoute
 import de.mhh.digimob.feature.training.presentation.TrainingRoute
 import de.mhh.digimob.feature.training.presentation.trainingGraph
 
@@ -28,12 +28,12 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = MenuGraphRoute) {
                     menuGraph(
                         navController = navController,
-                        // "Aufnahmen testen" nur in der Entwickler-Version (Desktop: --entwickler)
-                        showRecordingTest = BuildConfig.DEBUG,
+                        // "Aufnehmen" nur in der Entwickler-Version, wie tools/record_exercise.py
+                        showRecording = BuildConfig.DEBUG,
                         onStartTraining = { ids, target ->
                             navController.navigate(TrainingRoute(exerciseIds = ids.map { it.key }, target = target))
                         },
-                        onRecordingTest = { navController.navigate(RecordingTestRoute) },
+                        onRecordClick = { navController.navigate(RecordingRoute) },
                         onQuit = { finish() }
                     )
                     trainingGraph(onBackToMenu = { navController.popBackStack(MainMenuRoute, inclusive = false) })

@@ -1,0 +1,23 @@
+{
+    "exercise": "bizepscurls",
+    "expected_reps": 0,
+    "expected_per_side": {
+        "left": 5,
+        "right": 0
+    },
+    "preset": "voll",
+    "started_at": "2026-10-21T12:00:47",
+    "pose_model": "full",
+    "video": "video.mp4",
+    "keypoints": "keypoints_full.jsonl",
+    "camera": {
+        "name": "samsung SM-X210"
+    },
+    "resolution": [
+        640,
+        480
+    ],
+    "measured_fps": 10.2,
+    "frames_recorded": 134,
+    "frames_with_pose": 134
+}

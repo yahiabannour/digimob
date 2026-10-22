@@ -1,6 +1,7 @@
 package de.mhh.digimob.feature.training.presentation.training
 
 import de.mhh.digimob.core.domain.exercise.BarStyle
+import de.mhh.digimob.core.domain.exercise.ExerciseCatalog
 import de.mhh.digimob.core.domain.exercise.ExerciseId
 import de.mhh.digimob.core.domain.exercise.Pose
 import de.mhh.digimob.core.domain.exercise.Side
@@ -23,7 +24,10 @@ data class TrainingState<out Image>(
     val isZoomOn: Boolean = false,
     val showKeypoints: Boolean = false,
     val error: UiText? = null
-)
+) {
+    /** Was die Keypoints-Anzeige zeigt: die Landmarks der Uebung. */
+    val shownLandmarks: Set<Int> get() = exercise?.let(ExerciseCatalog::landmarks).orEmpty()
+}
 
 sealed interface TrainingAction {
     data class OnCameraPermissionResult(val isGranted: Boolean) : TrainingAction
@@ -31,7 +35,12 @@ sealed interface TrainingAction {
     data object OnKeypointsClick : TrainingAction
     data object OnZoomClick : TrainingAction
     data object OnDemoPlayed : TrainingAction
+    data object OnDemoSkip : TrainingAction
     data object OnStopClick : TrainingAction
+
+    /** Die App ist nicht mehr zu sehen (Home, Bildschirm aus) bzw. wieder da. */
+    data object OnScreenHidden : TrainingAction
+    data object OnScreenShown : TrainingAction
 }
 
 sealed interface TrainingEvent {

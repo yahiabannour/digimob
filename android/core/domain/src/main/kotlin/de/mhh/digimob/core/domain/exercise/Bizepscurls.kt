@@ -5,23 +5,23 @@ package de.mhh.digimob.core.domain.exercise
  * Schwellen (Hysterese): gebeugt unter minAngle = UP, gestreckt ueber maxAngle = DOWN.
  * UP nach DOWN zaehlt. Eine Phase gilt erst nach CONFIRM_TIME s Haltezeit.
  */
-class Bizepscurls(target: Int?, preset: Preset) : Exercise(target) {
+class Bizepscurls(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) : Exercise(target) {
     override val id = ExerciseId.BIZEPSCURLS
 
     private enum class Stage { DOWN, UP }
 
     /** Ziel: Ellbogen gebeugt unter (Einfach: weniger weit beugen). */
-    val minAngle: Double = if (preset == Preset.EINFACH) 120.0 else 110.0
+    val minAngle: Double = THRESHOLDS.valueOf(MIN_ANGLE, preset, values)
 
     /** Oberarme am Koerper, sonst wird nicht gezaehlt (Einfach: Pflege-Aufnahmen 50-72 Grad). */
-    val maxShoulder: Double = if (preset == Preset.EINFACH) 60.0 else 50.0
+    val maxShoulder: Double = THRESHOLDS.valueOf(MAX_SHOULDER, preset, values)
 
     // Gestreckt = STRECKEN Grad ueber dem Ziel: der Unterarm faellt von selbst zurueck, aber nicht
     // immer bis 150 Grad (Pflege-Aufnahme rec10)
     val maxAngle: Double get() = minAngle + STRECKEN
 
-    override val thresholds: Map<String, Double>
-        get() = mapOf("min_angle" to minAngle, "max_shoulder" to maxShoulder)
+    override val thresholds: Thresholds
+        get() = mapOf(MIN_ANGLE to minAngle, MAX_SHOULDER to maxShoulder)
 
     private val stage = mutableMapOf<Side, Stage?>().apply { sides.forEach { put(it, null) } }
     private val hold = sides.associateWith { HoldTime<Stage>(CONFIRM_TIME) }
@@ -35,7 +35,7 @@ class Bizepscurls(target: Int?, preset: Preset) : Exercise(target) {
         for (side in sides) {
             val schulter = pose.xy(Landmarks.SCHULTER.getValue(side))
             val ellbogen = pose.xy(Landmarks.ELLBOGEN.getValue(side))
-            shoulder[side] = ExerciseMath.angle(pose.xy(Landmarks.HUEFTE.getValue(side)), schulter, ellbogen)
+            shoulder[side] = ExerciseMath.angle(pose.hip(side), schulter, ellbogen)
             val angle = ExerciseMath.angle(pose.xy(Landmarks.HANDGELENK.getValue(side)), ellbogen, schulter)
             val values = recent.getValue(side)
             values += angle
@@ -78,6 +78,14 @@ class Bizepscurls(target: Int?, preset: Preset) : Exercise(target) {
     override fun back(side: Side): Boolean = stage[side] == Stage.UP   // gebeugt gezaehlt, erst strecken
 
     companion object {
+        const val MIN_ANGLE = "min_angle"
+        const val MAX_SHOULDER = "max_shoulder"
+        val LANDMARKS = Landmarks.ARME
+        val THRESHOLDS = listOf(
+            Threshold(MIN_ANGLE, voll = 110.0, einfach = 120.0, range = 30.0..155.0, unit = ThresholdUnit.DEGREES),
+            Threshold(MAX_SHOULDER, voll = 50.0, einfach = 60.0, range = 20.0..90.0, unit = ThresholdUnit.DEGREES)
+        )
+
         const val STRECKEN = 15.0
         const val BAR_START = 160.0
         // Auf allen 13 Aufnahmen zaehlt nur 0.15 s alles richtig: 0.10 s zaehlt in rec5 rechts ein

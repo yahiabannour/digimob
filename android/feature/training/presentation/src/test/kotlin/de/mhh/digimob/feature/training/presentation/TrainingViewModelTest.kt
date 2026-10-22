@@ -10,7 +10,9 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import de.mhh.digimob.core.domain.exercise.BarStyle
 import de.mhh.digimob.core.domain.exercise.ExerciseId
+import de.mhh.digimob.core.domain.exercise.ExerciseCatalog
 import de.mhh.digimob.core.domain.exercise.Preset
+import de.mhh.digimob.core.domain.exercise.Thresholds
 import de.mhh.digimob.core.domain.exercise.Side
 import de.mhh.digimob.core.presentation.UiText
 import de.mhh.digimob.feature.training.domain.Announcement
@@ -50,10 +52,10 @@ class TrainingViewModelTest {
     private fun viewModel(
         ids: List<ExerciseId> = listOf(ExerciseId.ABDUKTION),
         target: Int = 1,
-        presets: Map<ExerciseId, Preset> = emptyMap()
+        thresholds: Map<ExerciseId, Thresholds> = emptyMap()
     ): TrainingViewModel<String> {
         camera = FakeLivePoseSource()   // je ViewModel eine eigene Kamera
-        return TrainingViewModel(ids, target, FakePresetRepository(presets), camera, speaker, clock)
+        return TrainingViewModel(ids, target, FakeThresholdRepository(thresholds), camera, speaker, clock)
     }
 
     /** Einfuehrung zu Ende: Demo durch und 10 s vorbei. */
@@ -105,11 +107,16 @@ class TrainingViewModelTest {
     }
 
     @Test
-    fun `das gespeicherte Preset gilt`() {
-        // 140 Grad erreicht nur das Ziel von Einfach (120), nicht das von Voll (150)
+    fun `die gespeicherten Schwellen gelten, Preset wie von Hand`() {
+        // 140 Grad erreicht das Ziel von Einfach (120) und von Hand 135, nicht das von Voll (150)
         val lowRep = List(6) { DOWN } + List(6) { arms(140.0) } + List(6) { DOWN }
-        for ((preset, phase) in listOf(Preset.VOLL to Phase.COUNTING, Preset.EINFACH to Phase.DONE)) {
-            val viewModel = viewModel(presets = mapOf(ExerciseId.ABDUKTION to preset))
+        val cases = listOf(
+            ExerciseCatalog.values(ExerciseId.ABDUKTION, Preset.VOLL) to Phase.COUNTING,
+            ExerciseCatalog.values(ExerciseId.ABDUKTION, Preset.EINFACH) to Phase.DONE,
+            mapOf("max_angle" to 135.0) to Phase.DONE
+        )
+        for ((values, phase) in cases) {
+            val viewModel = viewModel(thresholds = mapOf(ExerciseId.ABDUKTION to values))
             viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
             viewModel.skipIntro()
             feed(lowRep)
@@ -132,6 +139,85 @@ class TrainingViewModelTest {
         viewModel.onAction(TrainingAction.OnPauseClick)
         feed(oneRep())
         assertThat(viewModel.state.value.phase).isEqualTo(Phase.DONE)
+    }
+
+    @Test
+    fun `App weg - Uebung haelt an, Kamera aus, zurueck - Kamera an, weiter erst mit Weiter`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        viewModel.skipIntro()
+        viewModel.onAction(TrainingAction.OnScreenHidden)
+        assertThat(viewModel.state.value.isPaused).isTrue()
+        assertThat(camera.isRunning).isFalse()
+
+        viewModel.onAction(TrainingAction.OnScreenShown)
+        assertThat(camera.isRunning).isTrue()
+        assertThat(camera.collections).isEqualTo(2)
+        feed(oneRep())
+        assertThat(viewModel.state.value.phase).isEqualTo(Phase.COUNTING)  // noch angehalten
+        viewModel.onAction(TrainingAction.OnPauseClick)
+        feed(oneRep())
+        assertThat(viewModel.state.value.phase).isEqualTo(Phase.DONE)
+    }
+
+    @Test
+    fun `schon angehalten, App weg und zurueck - bleibt angehalten`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        viewModel.onAction(TrainingAction.OnPauseClick)
+        viewModel.onAction(TrainingAction.OnScreenHidden)
+        viewModel.onAction(TrainingAction.OnScreenShown)
+        assertThat(viewModel.state.value.isPaused).isTrue()
+    }
+
+    @Test
+    fun `Seite erscheint vor der Erlaubnis - die Kamera startet erst mit ihr, einmal`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnScreenShown)
+        assertThat(camera.collections).isEqualTo(0)
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        assertThat(camera.collections).isEqualTo(1)
+        assertThat(viewModel.state.value.isPaused).isFalse()
+    }
+
+    @Test
+    fun `Erlaubnis kommt, waehrend die App weg ist - angehalten, Kamera erst bei der Rueckkehr`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnScreenHidden)
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        assertThat(camera.collections).isEqualTo(0)
+        assertThat(viewModel.state.value.isPaused).isTrue()
+        viewModel.onAction(TrainingAction.OnScreenShown)
+        assertThat(camera.isRunning).isTrue()
+    }
+
+    @Test
+    fun `nach Stop startet die Rueckkehr die Kamera nicht wieder`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        viewModel.onAction(TrainingAction.OnStopClick)
+        viewModel.onAction(TrainingAction.OnScreenHidden)
+        viewModel.onAction(TrainingAction.OnScreenShown)
+        assertThat(camera.isRunning).isFalse()
+        assertThat(camera.collections).isEqualTo(1)
+    }
+
+    @Test
+    fun `Doppeltipp auf die Demo - es wird sofort gezaehlt`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        viewModel.onAction(TrainingAction.OnDemoSkip)
+        assertThat(viewModel.state.value.phase).isEqualTo(Phase.COUNTING)
+        feed(oneRep())
+        assertThat(viewModel.state.value.phase).isEqualTo(Phase.DONE)
+    }
+
+    @Test
+    fun `Doppeltipp vor der Erlaubnis tut nichts`() {
+        val viewModel = viewModel()
+        viewModel.onAction(TrainingAction.OnDemoSkip)
+        viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
+        assertThat(viewModel.state.value.phase).isEqualTo(Phase.INTRO)
     }
 
     @Test

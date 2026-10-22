@@ -13,7 +13,6 @@ fun SourceError.toUiText(): UiText = UiText.StringResource(
         SourceError.NO_CAMERA -> R.string.error_no_camera
         SourceError.CAMERA_FAILED -> R.string.error_camera_failed
         SourceError.POSE_FAILED -> R.string.error_pose_failed
-        SourceError.VIDEO_UNREADABLE -> R.string.error_video_unreadable
     }
 )
 

@@ -6,14 +6,14 @@ import kotlin.math.atan2
  * Kopf nach links/rechts drehen. Kein Gelenkwinkel: headRotation() aus den Pose-Landmarks 0-6.
  * Jeder Wechsel der Richtung ueber maxAngle hinaus zaehlt fuer diese Seite.
  */
-class Halswirbelsaeule(target: Int?, preset: Preset) : Exercise(target) {
+class Halswirbelsaeule(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) : Exercise(target) {
     override val id = ExerciseId.HALSWIRBELSAEULE
     override val barStyle = BarStyle.CENTER     // ein Balken unter dem Video, waechst zur Drehrichtung
 
     /** Ab hier wird die Drehung gezaehlt (Balken voll). Einfach: rund 20 % weniger weit. */
-    val maxAngle: Double = if (preset == Preset.EINFACH) 28.0 else 35.0
+    val maxAngle: Double = THRESHOLDS.valueOf(MAX_ANGLE, preset, values)
 
-    override val thresholds: Map<String, Double> get() = mapOf("max_angle" to maxAngle)
+    override val thresholds: Thresholds get() = mapOf(MAX_ANGLE to maxAngle)
 
     private var direction: Side? = null          // aktuelle Richtung, bleibt bis zur Gegenseite
     private var previousDirection: Side? = null  // zuletzt gezaehlte Richtung
@@ -45,6 +45,13 @@ class Halswirbelsaeule(target: Int?, preset: Preset) : Exercise(target) {
     }
 
     companion object {
+        const val MAX_ANGLE = "max_angle"
+        val LANDMARKS = Landmarks.GESICHT
+        val THRESHOLDS = listOf(
+            // ueber MIN_ANGLE (Balkenanfang)
+            Threshold(MAX_ANGLE, voll = 35.0, einfach = 28.0, range = 20.0..80.0, unit = ThresholdUnit.DEGREES)
+        )
+
         const val MIN_ANGLE = 15.0  // bis hier gilt der Kopf als mittig (Balken leer)
 
         /**

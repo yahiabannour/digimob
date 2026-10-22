@@ -22,7 +22,7 @@ class MediaPipePoseDetector(private val context: Context) : Closeable {
     private var landmarker: PoseLandmarker? = null
     private var lastTimestampMs = Long.MIN_VALUE
 
-    /** Ohne Tracking-Gedaechtnis neu anfangen (jede Uebungsfolge, jede Aufnahme). */
+    /** Ohne Tracking-Gedaechtnis neu anfangen (jede Uebungsfolge). */
     fun reset() {
         close()
         lastTimestampMs = Long.MIN_VALUE

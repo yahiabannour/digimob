@@ -42,19 +42,70 @@ enum class PostOpDay(val repetitions: Int) {
 /** uebungen.py: die einzige Stelle, die die Uebungen kennt. Neue Uebung: Klasse + Eintrag hier. */
 object ExerciseCatalog {
 
-    /** Eine frische Uebung. target = null: nur zaehlen (Aufnahmen testen). */
-    fun create(id: ExerciseId, target: Int?, preset: Preset): Exercise = when (id) {
-        ExerciseId.ABDUKTION -> Abduktion(target, preset)
-        ExerciseId.BIZEPSCURLS -> Bizepscurls(target, preset)
-        ExerciseId.BUTTERFLY -> Butterfly(target, preset)
-        ExerciseId.FLEXION_SCHULTER -> FlexionSchulter(target, preset)
-        ExerciseId.HALSWIRBELSAEULE -> Halswirbelsaeule(target, preset)
-        ExerciseId.MOBILISATION_SCHULTER -> MobilisationSchulter(target, preset)
-        ExerciseId.ROTATION -> Rotation(target, preset)
-        ExerciseId.SEITENHEBEN -> Seitenheben(target, preset)
+    /** Eine frische Uebung mit den Werten eines Presets. target = null: nur zaehlen (Systemtest). */
+    fun create(id: ExerciseId, target: Int?, preset: Preset): Exercise = create(id, target, values(id, preset))
+
+    /** Eine frische Uebung mit eingestellten Schwellen (Auswahlseite); fehlende gelten wie Voll. */
+    fun create(id: ExerciseId, target: Int?, values: Thresholds): Exercise = when (id) {
+        ExerciseId.ABDUKTION -> Abduktion(target, values = values)
+        ExerciseId.BIZEPSCURLS -> Bizepscurls(target, values = values)
+        ExerciseId.BUTTERFLY -> Butterfly(target, values = values)
+        ExerciseId.FLEXION_SCHULTER -> FlexionSchulter(target, values = values)
+        ExerciseId.HALSWIRBELSAEULE -> Halswirbelsaeule(target, values = values)
+        ExerciseId.MOBILISATION_SCHULTER -> MobilisationSchulter(target, values = values)
+        ExerciseId.ROTATION -> Rotation(target, values = values)
+        ExerciseId.SEITENHEBEN -> Seitenheben(target, values = values)
     }
 
+    /** Die einstellbaren Schwellen einer Uebung, in der Reihenfolge ihrer Schieberegler. */
+    fun thresholds(id: ExerciseId): List<Threshold> = when (id) {
+        ExerciseId.ABDUKTION -> Abduktion.THRESHOLDS
+        ExerciseId.BIZEPSCURLS -> Bizepscurls.THRESHOLDS
+        ExerciseId.BUTTERFLY -> Butterfly.THRESHOLDS
+        ExerciseId.FLEXION_SCHULTER -> FlexionSchulter.THRESHOLDS
+        ExerciseId.HALSWIRBELSAEULE -> Halswirbelsaeule.THRESHOLDS
+        ExerciseId.MOBILISATION_SCHULTER -> MobilisationSchulter.THRESHOLDS
+        ExerciseId.ROTATION -> Rotation.THRESHOLDS
+        ExerciseId.SEITENHEBEN -> Seitenheben.THRESHOLDS
+    }
+
+    /** Die Landmarks, aus denen die Uebung rechnet: nur diese zeigt die Keypoints-Anzeige. */
+    fun landmarks(id: ExerciseId): Set<Int> = when (id) {
+        ExerciseId.ABDUKTION, ExerciseId.FLEXION_SCHULTER, ExerciseId.MOBILISATION_SCHULTER,
+        ExerciseId.SEITENHEBEN -> Armheben.LANDMARKS
+        ExerciseId.BIZEPSCURLS -> Bizepscurls.LANDMARKS
+        ExerciseId.BUTTERFLY -> Butterfly.LANDMARKS
+        ExerciseId.HALSWIRBELSAEULE -> Halswirbelsaeule.LANDMARKS
+        ExerciseId.ROTATION -> Rotation.LANDMARKS
+    }
+
+    /** Uebung.werte(preset): die Werte eines Presets. */
+    fun values(id: ExerciseId, preset: Preset): Thresholds = thresholds(id).associate { it.key to it.value(preset) }
+
+    /** Die Presets mit genau diesen Werten: eins, beide (Voll = Einfach) oder keins (von Hand angepasst). */
+    fun presetsOf(id: ExerciseId, values: Thresholds): Set<Preset> =
+        Preset.entries.filter { values(id, it) == values }.toSet()
+
     /** Sind Voll und Einfach gleich (Seitheben, Mobilisation)? Die Auswahlseite zeigt dann "Voll = Einfach". */
-    fun presetsEqual(id: ExerciseId): Boolean =
-        create(id, null, Preset.VOLL).thresholds == create(id, null, Preset.EINFACH).thresholds
+    fun presetsEqual(id: ExerciseId): Boolean = values(id, Preset.VOLL) == values(id, Preset.EINFACH)
+
+    /**
+     * Uebung.pruefe(): genau die Schwellen der Uebung, alle groesser als 0 und in ihrem Bereich, jede
+     * untere Schwelle min_X unter ihrer oberen max_X. null = passt.
+     */
+    fun validate(id: ExerciseId, values: Thresholds): ThresholdError? {
+        val thresholds = thresholds(id)
+        values.keys.firstOrNull { key -> thresholds.none { it.key == key } }?.let { return ThresholdError.Unknown(it) }
+        for (threshold in thresholds) {
+            val value = values[threshold.key] ?: return ThresholdError.Missing(threshold.key)
+            if (!(value > 0)) return ThresholdError.NotPositive(threshold.key)     // auch NaN
+            if (value !in threshold.range) return ThresholdError.OutOfRange(threshold.key)
+            val upper = "max_" + threshold.key.removePrefix("min_")
+            val upperValue = values[upper]
+            if (threshold.key.startsWith("min_") && upperValue != null && value >= upperValue) {
+                return ThresholdError.MinNotBelowMax(threshold.key, upper)
+            }
+        }
+        return null
+    }
 }

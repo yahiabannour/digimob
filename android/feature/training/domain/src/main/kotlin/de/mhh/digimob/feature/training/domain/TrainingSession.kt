@@ -29,25 +29,22 @@ data class SessionState(
     val count: Int,                 // so viele Uebungen insgesamt
     val barStyle: BarStyle,
     val bars: Map<Side, Bar>?,
-    val message: ExerciseMessage,
-    val counter: Map<Side, Int>     // gezaehlt je Seite (Aufnahmen testen)
+    val message: ExerciseMessage
 )
 
 /**
  * Fuehrt eine Warteschlange frischer Uebungen durch Einfuehrung, Zaehlen und Fertig
  * (uebungslauf.py). Kennt weder Kamera noch Oberflaeche:
- *  - [onFrame] mit jeder erkannten Pose (live und im Aufnahmen-Test)
+ *  - [onFrame] mit jeder erkannten Pose
  *  - [tick] regelmaessig, auch ohne Bilder: Ende von Einfuehrung und "Prima"
  *  - [onDemoPlayed], wenn die 3D-Demo einmal ganz durchgelaufen ist
+ *  - [skipIntro], wenn die Demo per Doppeltipp uebersprungen wird (nur Android)
  * Pausenzeit zaehlt nicht zur Einfuehrung und zu "Prima".
- *
- * intro = false (Aufnahmen testen): ohne Demo und Ansage, gezaehlt wird ab dem ersten Bild.
  */
 class TrainingSession(
     exercises: List<Exercise>,
     private val speaker: Speaker,
-    private val clock: Clock,
-    private val intro: Boolean = true
+    private val clock: Clock
 ) {
     private val queue = ArrayDeque(exercises)
     private val total = exercises.size
@@ -87,6 +84,14 @@ class TrainingSession(
     fun onDemoPlayed() {
         if (phase == Phase.INTRO) demoPlays++
         tick()
+    }
+
+    /** Einfuehrung sofort beenden: die Ansage verstummt, gezaehlt wird ab jetzt. Sonst nichts. */
+    fun skipIntro() {
+        if (phase != Phase.INTRO) return
+        speaker.stop()
+        setPhase(Phase.COUNTING)
+        publish()
     }
 
     fun tick() {
@@ -132,8 +137,8 @@ class TrainingSession(
         demoPlays = 0
         speaker.stop()          // was von der vorigen Uebung noch laeuft oder wartet, verstummt
         milestones.reset()
-        setPhase(if (intro) Phase.INTRO else Phase.COUNTING)
-        if (intro) speaker.say(Announcement.Intro(exercise.id))
+        setPhase(Phase.INTRO)
+        speaker.say(Announcement.Intro(exercise.id))
         publish()
     }
 
@@ -153,8 +158,7 @@ class TrainingSession(
         count = total,
         barStyle = exercise?.barStyle ?: BarStyle.SPLIT,
         bars = if (exercise == null || phase != Phase.COUNTING) null else exercise.progress(),
-        message = exercise?.message ?: ExerciseMessage.Start,
-        counter = exercise?.counter ?: emptyMap()
+        message = exercise?.message ?: ExerciseMessage.Start
     )
 
     companion object {

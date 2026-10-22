@@ -7,7 +7,7 @@ import de.mhh.digimob.core.domain.Result
 import de.mhh.digimob.core.domain.exercise.ExerciseCatalog
 import de.mhh.digimob.core.domain.exercise.ExerciseId
 import de.mhh.digimob.core.domain.exercise.Preset
-import de.mhh.digimob.core.domain.exercise.PresetRepository
+import de.mhh.digimob.core.domain.exercise.ThresholdRepository
 import de.mhh.digimob.core.presentation.UiText
 import de.mhh.digimob.core.presentation.toUiText
 import de.mhh.digimob.feature.training.domain.Clock
@@ -30,14 +30,16 @@ import kotlinx.coroutines.launch
 
 /**
  * Die Uebungsseite live (Hauptprogramm.start_exercises + loop): frische Uebungen mit dem Ziel des
- * Tages und dem gespeicherten Preset je Uebung, die Kamera liefert Bilder mit Pose, die
+ * Tages und den gespeicherten Schwellen je Uebung, die Kamera liefert Bilder mit Pose, die
  * TrainingSession zaehlt. Jedes Bild treibt auch die Zeit der Session (Einfuehrung, "Prima"), die
- * Kamera laeuft durchgehend. Gestartet wird erst mit der Kamera-Erlaubnis.
+ * Kamera laeuft, solange die Seite zu sehen ist. Gestartet wird erst mit der Kamera-Erlaubnis.
+ * Verschwindet die App (Home, Bildschirm aus), haelt die Uebung an und die Kamera geht aus; zurueck
+ * laeuft die Kamera wieder, die Uebung bleibt angehalten, bis "Weiter" getippt wird.
  */
 class TrainingViewModel<Image : Any>(
     private val exerciseIds: List<ExerciseId>,
     private val target: Int,
-    private val presetRepository: PresetRepository,
+    private val thresholdRepository: ThresholdRepository,
     private val poseSource: LivePoseSource<Image>,
     private val speaker: Speaker,
     private val clock: Clock
@@ -55,18 +57,15 @@ class TrainingViewModel<Image : Any>(
     private val barFeedbacks = BarFeedbacks(clock)
     private var session: TrainingSession? = null
     private var job: Job? = null
+    private var cameraJob: Job? = null
     private var ended = false
+    private var isHidden = false
 
     fun onAction(action: TrainingAction) {
         when (action) {
             is TrainingAction.OnCameraPermissionResult ->
                 if (action.isGranted) start() else fail(UiText.StringResource(R.string.error_permission))
-            TrainingAction.OnPauseClick -> {
-                val paused = !_state.value.isPaused
-                session?.setPaused(paused)
-                _state.update { it.copy(isPaused = paused) }
-                log.i { if (paused) "Die Uebung wird angehalten" else "Die Uebung wird weiter durchgefuehrt" }
-            }
+            TrainingAction.OnPauseClick -> setPaused(!_state.value.isPaused)
             TrainingAction.OnKeypointsClick -> _state.update { it.copy(showKeypoints = !it.showKeypoints) }
             TrainingAction.OnZoomClick -> {
                 zoom.value = !zoom.value
@@ -76,24 +75,52 @@ class TrainingViewModel<Image : Any>(
                 it.onDemoPlayed()
                 publish(it.state.value)
             }
+            TrainingAction.OnDemoSkip -> session?.let {
+                it.skipIntro()
+                publish(it.state.value)
+            }
             TrainingAction.OnStopClick -> end()
+            TrainingAction.OnScreenHidden -> {
+                isHidden = true
+                if (session != null && !ended) setPaused(true)
+                stopCamera()
+            }
+            TrainingAction.OnScreenShown -> {
+                isHidden = false
+                session?.let { if (!ended) startCamera(it) }
+            }
         }
+    }
+
+    private fun setPaused(paused: Boolean) {
+        if (paused == _state.value.isPaused) return
+        session?.setPaused(paused)
+        _state.update { it.copy(isPaused = paused) }
+        log.i { if (paused) "Die Uebung wird angehalten" else "Die Uebung wird weiter durchgefuehrt" }
     }
 
     private fun start() {
         if (job != null || ended) return
         job = viewModelScope.launch {
-            val presets = presetRepository.observePresets().first()
-            exerciseIds.forEach { log.i { "${it.key}: ${presets[it] ?: Preset.VOLL}, Ziel $target" } }
+            val stored = thresholdRepository.observeThresholds().first()
+            val thresholds = exerciseIds.associateWith { stored[it] ?: ExerciseCatalog.values(it, Preset.VOLL) }
+            exerciseIds.forEach { log.i { "${it.key}: ${thresholds.getValue(it)}, Ziel $target" } }
             val session = TrainingSession(
-                exercises = exerciseIds.map { ExerciseCatalog.create(it, target, presets[it] ?: Preset.VOLL) },
+                exercises = exerciseIds.map { ExerciseCatalog.create(it, target, thresholds.getValue(it)) },
                 speaker = speaker,
                 clock = clock
             )
             this@TrainingViewModel.session = session
             session.start()
             publish(session.state.value)
+            // Erlaubnis erteilt, waehrend die App schon weg war: angehalten, Kamera erst bei der Rueckkehr
+            if (isHidden) setPaused(true) else startCamera(session)
+        }
+    }
 
+    private fun startCamera(session: TrainingSession) {
+        if (cameraJob != null) return
+        cameraJob = viewModelScope.launch {
             poseSource.frames(zoom).collect { result ->
                 when (result) {
                     is Result.Success -> if (!session.isPaused) {
@@ -110,6 +137,11 @@ class TrainingViewModel<Image : Any>(
                 }
             }
         }
+    }
+
+    private fun stopCamera() {
+        cameraJob?.cancel()
+        cameraJob = null
     }
 
     private fun publish(session: SessionState) {
@@ -140,6 +172,7 @@ class TrainingViewModel<Image : Any>(
         ended = true
         session?.stop()
         job?.cancel()
+        stopCamera()
     }
 
     override fun onCleared() {

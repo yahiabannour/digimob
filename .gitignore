@@ -3,6 +3,7 @@ python/Log.log
 .venv/
 python/recordings/**/*.mp4
 python/recordings/**/*.webm
+android/recordings/**/*.mp4
 python/.pytest_cache/
 python/.mcp.json
 python/demos/*.blend*

@@ -15,20 +15,21 @@ import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 import de.mhh.digimob.core.domain.exercise.Landmark
 
 /**
- * Das Skelett ueber dem Videobild (draw_pose): rote Punkte, weisse Verbindungen. [landmarks]
- * relativ zum Bild, das darunter in derselben Groesse liegt (beide werden zusammen gespiegelt).
+ * Das Skelett ueber dem Videobild (draw_pose): rote Punkte, weisse Verbindungen, nur die Punkte in
+ * [shown] (die der Uebung, ExerciseCatalog.landmarks) und die Verbindungen zwischen ihnen.
+ * [landmarks] relativ zum Bild, das darunter in derselben Groesse liegt (beide werden zusammen
+ * gespiegelt).
  */
 @Composable
-internal fun KeypointOverlay(landmarks: List<Landmark>, modifier: Modifier = Modifier) {
+internal fun KeypointOverlay(landmarks: List<Landmark>, shown: Set<Int>, modifier: Modifier = Modifier) {
     val colors = DigiMobTheme.colors
     Canvas(modifier = modifier) {
         fun point(i: Int) = landmarks[i].let { Offset((it.x * size.width).toFloat(), (it.y * size.height).toFloat()) }
+        fun drawn(i: Int) = i < landmarks.size && i in shown
         for ((a, b) in POSE_CONNECTIONS) {
-            if (a < landmarks.size && b < landmarks.size) {
-                drawLine(colors.skeleton, point(a), point(b), strokeWidth = 3.dp.toPx())
-            }
+            if (drawn(a) && drawn(b)) drawLine(colors.skeleton, point(a), point(b), strokeWidth = 3.dp.toPx())
         }
-        landmarks.indices.forEach { drawCircle(colors.keypoint, radius = 5.dp.toPx(), center = point(it)) }
+        landmarks.indices.filter(::drawn).forEach { drawCircle(colors.keypoint, radius = 5.dp.toPx(), center = point(it)) }
     }
 }
 
@@ -41,7 +42,7 @@ private val POSE_CONNECTIONS = listOf(
     27 to 29, 28 to 30, 29 to 31, 30 to 32, 27 to 31, 28 to 32
 )
 
-@Preview(name = "Skelett")
+@Preview(name = "Skelett, Schultern und Ellbogen")
 @Composable
 private fun KeypointOverlayPreview() {
     DigiMobTheme {
@@ -50,7 +51,7 @@ private fun KeypointOverlayPreview() {
                 val row = i / 6
                 Landmark(0.2 + 0.12 * (i % 6), 0.1 + 0.14 * row, 0.0)
             }
-            KeypointOverlay(landmarks = points, modifier = Modifier.width(400.dp).aspectRatio(4f / 3f))
+            KeypointOverlay(landmarks = points, shown = setOf(11, 12, 13, 14), modifier = Modifier.width(400.dp).aspectRatio(4f / 3f))
         }
     }
 }

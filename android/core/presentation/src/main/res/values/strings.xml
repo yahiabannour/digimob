@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="exercise_abduktion">Abduktion Schulter</string>
     <string name="exercise_bizepscurls">Bizepscurls</string>
     <string name="exercise_butterfly">Butterfly</string>
@@ -11,6 +11,16 @@
     <string name="preset_voll">Voll</string>
     <string name="preset_einfach">Einfach</string>
     <string name="preset_equal">Voll = Einfach</string>
+    <string name="preset_custom">angepasst</string>
+    <string name="preset_invalid">ungültig</string>
+
+    <!-- Schieberegler der Schwellen, Wortlaut wie in der Python-App -->
+    <string name="threshold_arm_up">Arm oben über</string>
+    <string name="threshold_arm_bent">Arm gebeugt unter</string>
+    <string name="threshold_upper_arm">Oberarm am Körper bis</string>
+    <string name="threshold_arms_open">Arme offen über</string>
+    <string name="threshold_forearms_out">Unterarme außen über</string>
+    <string name="threshold_head_turn">Drehung zählt ab</string>
 
     <string name="op_bauch">Bauch-OP</string>
     <string name="op_brust">Brust-OP</string>
@@ -22,14 +32,15 @@
     <string name="day_5">ab Tag 5</string>
 
     <string name="message_start">Jetzt können Sie mit dieser Übung starten</string>
-    <string name="message_target_praise">Super, versuchen Sie %1$d mal zu schaffen!</string>
-    <string name="message_target">Versuchen Sie %1$d mal zu schaffen!</string>
+    <!-- "mal" und "von" bleiben bei 1 wie bei 5: kein Plural noetig, Wortlaut wie Python -->
+    <string name="message_target_praise" tools:ignore="PluralsCandidate">Okay, versuchen Sie %1$d mal zu schaffen!</string>
+    <string name="message_target" tools:ignore="PluralsCandidate">Versuchen Sie %1$d mal zu schaffen!</string>
     <string name="message_done">Prima, gute Leistung!</string>
-    <string name="message_count_only">Aufnahmen-Test: nur zählen</string>
+    <string name="message_count_only">Nur zählen</string>
 
     <string name="error_disk_full">Der Speicher ist voll, die Auswahl wurde nicht gespeichert.</string>
-    <string name="error_not_found">Die Datei wurde nicht gefunden.</string>
     <string name="error_unknown">Die Auswahl konnte nicht gespeichert werden.</string>
 
     <string name="back">Zurück</string>
+    <string name="ok">OK</string>
 </resources>

@@ -1,8 +1,10 @@
 package de.mhh.digimob.core.designsystem.components
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -15,7 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 
 /** Art eines Knopfs wie KNOPF in der Desktop-App. */
@@ -27,6 +32,15 @@ enum class ButtonKind {
     ANGEHALTEN      // Pause aktiv
 }
 
+/**
+ * Groesse eines Knopfs: NORMAL wie auf dem Desktop, KOMPAKT fuer die Kopfleiste der Uebungsseite
+ * (vier Knoepfe neben dem Titel).
+ */
+enum class ButtonSize(val minWidth: Dp, val minHeight: Dp, val padding: PaddingValues, val fontSize: TextUnit) {
+    NORMAL(320.dp, 72.dp, PaddingValues(horizontal = 24.dp, vertical = 12.dp), 24.sp),
+    KOMPAKT(140.dp, 52.dp, PaddingValues(horizontal = 16.dp, vertical = 6.dp), 20.sp)
+}
+
 /** Grosser, flacher Knopf der App (Desktop: Arial 24, zwei Zeilen hoch, 20 Zeichen breit). */
 @Composable
 fun DigiMobButton(
@@ -34,7 +48,8 @@ fun DigiMobButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     kind: ButtonKind = ButtonKind.SEKUNDAER,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    size: ButtonSize = ButtonSize.NORMAL
 ) {
     val (container, content) = when (kind) {
         ButtonKind.PRIMAER -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
@@ -45,13 +60,18 @@ fun DigiMobButton(
     }
     Button(
         onClick = onClick,
-        modifier = modifier.widthIn(min = 320.dp).heightIn(min = 72.dp),
+        modifier = modifier.widthIn(min = size.minWidth).heightIn(min = size.minHeight),
         enabled = enabled,
         shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.buttonColors(containerColor = container, contentColor = content),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+        contentPadding = size.padding
     ) {
-        Text(text = text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = size.fontSize),
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
     }
 }
 
@@ -81,5 +101,17 @@ private fun DigiMobButtonDisabledPreview() {
 private fun DigiMobButtonLongTextPreview() {
     DigiMobTheme {
         DigiMobButton(text = "Alle automatisch starten", onClick = {}, kind = ButtonKind.PRIMAER)
+    }
+}
+
+@Preview(name = "Kompakt (Kopfleiste)")
+@Composable
+private fun DigiMobButtonCompactPreview() {
+    DigiMobTheme {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DigiMobButton(text = "Pause", onClick = {}, size = ButtonSize.KOMPAKT)
+            DigiMobButton(text = "Keypoints an", onClick = {}, kind = ButtonKind.AN, size = ButtonSize.KOMPAKT)
+            DigiMobButton(text = "Stop", onClick = {}, kind = ButtonKind.GEFAHR, size = ButtonSize.KOMPAKT)
+        }
     }
 }

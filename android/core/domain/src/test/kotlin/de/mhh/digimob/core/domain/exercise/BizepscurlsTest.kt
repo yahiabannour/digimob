@@ -22,6 +22,13 @@ class BizepscurlsTest {
     }
 
     @Test
+    fun `Huefte unter dem Bildrand und unsichtbar zaehlt trotzdem`() {
+        val out = armPose(arm = 10.0 to 10.0, elbow = 175.0 to 175.0, hipInPicture = false)
+        val outBent = armPose(arm = 10.0 to 10.0, elbow = 40.0 to 40.0, hipInPicture = false)
+        assertThat(curls(out * 15 + outBent * 15 + out * 15).counter).isEqualTo(one)
+    }
+
+    @Test
     fun `Haltezeit misst die Zeit der Frames, nicht ihre Anzahl`() {
         // 6 gebeugte Frames: bei 30 fps 0.2 s (zaehlt), bei 60 fps 0.1 s (zu kurz)
         val frames = stretched * 15 + bent * 6 + stretched * 15

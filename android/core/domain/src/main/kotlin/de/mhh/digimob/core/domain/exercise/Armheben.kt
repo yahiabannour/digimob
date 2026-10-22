@@ -1,7 +1,8 @@
 package de.mhh.digimob.core.domain.exercise
 
 /**
- * Abduktion, Seitheben, Flexion und Mobilisation Schulter: Winkel Huefte-Schulter-Ellbogen je Arm.
+ * Abduktion, Seitheben, Flexion und Mobilisation Schulter: Winkel virtuelle Huefte-Schulter-Ellbogen
+ * je Arm ([Pose.hip]).
  * Eine Wiederholung ist unten -> ueber maxAngle (oben) -> wieder unter minAngle (unten).
  * Die Uebungen unterscheiden sich nur in Texten und Zielhoehe (maxAngle).
  */
@@ -14,7 +15,7 @@ abstract class Armheben(target: Int?, val maxAngle: Double) : Exercise(target) {
     // Aufnahmen, 36-50 bei der Pflege). 15 Grad halten Abstand zum Zittern um die Zielhoehe.
     val minAngle: Double get() = maxAngle - RUECKWEG
 
-    override val thresholds: Map<String, Double> get() = mapOf("max_angle" to maxAngle)
+    override val thresholds: Thresholds get() = mapOf(MAX_ANGLE to maxAngle)
 
     private val stage = mutableMapOf<Side, Stage?>().apply { sides.forEach { put(it, null) } }
     private val recent = sides.associateWith { mutableListOf<Double>() }
@@ -25,12 +26,10 @@ abstract class Armheben(target: Int?, val maxAngle: Double) : Exercise(target) {
         angle.clear()
         visible.clear()
         for (side in sides) {
-            val points = listOf(
-                Landmarks.HUEFTE.getValue(side),
-                Landmarks.SCHULTER.getValue(side),
-                Landmarks.ELLBOGEN.getValue(side)
-            )
-            val raw = ExerciseMath.angle(pose.xy(points[0]), pose.xy(points[1]), pose.xy(points[2]))
+            // Die Sichtbarkeit der echten Huefte zaehlt nicht: sie liegt beim Sitzen nah vor dem
+            // Tablet unter dem Bildrand
+            val points = listOf(Landmarks.SCHULTER.getValue(side), Landmarks.ELLBOGEN.getValue(side))
+            val raw = ExerciseMath.angle(pose.hip(side), pose.xy(points[0]), pose.xy(points[1]))
             // Eine Seite, deren schwaechster Punkt unsicherer ist, zaehlt in diesem Frame nicht: ein
             // verdeckter Ellbogen springt von Frame zu Frame, und der Winkel mit ihm (seitenheben/rec8)
             visible[side] = points.minOf { pose.landmarks[it].visibilityOrOne } >= MIN_VISIBILITY
@@ -65,6 +64,15 @@ abstract class Armheben(target: Int?, val maxAngle: Double) : Exercise(target) {
     override fun back(side: Side): Boolean = stage[side] == Stage.UP    // oben gewesen, zaehlt erst unten
 
     companion object {
+        const val MAX_ANGLE = "max_angle"
+
+        /** Was die Keypoints-Anzeige zeigt: die Punkte, aus denen gerechnet wird. */
+        val LANDMARKS = Landmarks.SCHULTERN_ELLBOGEN
+
+        /** Die eine Schwelle aller Armheben-Uebungen: die Zielhoehe, Schieberegler 40-175 Grad. */
+        internal fun maxAngle(voll: Double, einfach: Double = voll) =
+            listOf(Threshold(MAX_ANGLE, voll, einfach, 40.0..175.0, ThresholdUnit.DEGREES))
+
         const val RUECKWEG = 15.0
         const val BAR_START = 20.0          // Balken leer bis hier (Arm haengt)
         const val MIN_VISIBILITY = 0.6      // knapp: ein ruhender Ellbogen hat oft nur 0.6-0.8
@@ -72,25 +80,43 @@ abstract class Armheben(target: Int?, val maxAngle: Double) : Exercise(target) {
     }
 }
 
-class Abduktion(target: Int?, preset: Preset) :
-    Armheben(target, maxAngle = if (preset == Preset.EINFACH) 120.0 else 150.0) {
+// Jede Uebung: [values] (vom Schieberegler) vor dem Preset, wie Python UEBUNGEN[name](target, schwellen=werte)
+
+class Abduktion(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) :
+    Armheben(target, maxAngle = THRESHOLDS.valueOf(MAX_ANGLE, preset, values)) {
     override val id = ExerciseId.ABDUKTION
+
+    companion object {
+        val THRESHOLDS = maxAngle(voll = 150.0, einfach = 120.0)
+    }
 }
 
 // Einfach = Voll: die Zielhoehe liegt schon knapp ueber dem Ruhewinkel der Pflege-Aufnahmen (bis 50
 // Grad), tiefer laege "unten" (Zielhoehe - RUECKWEG) im Ruhewinkel
-class Seitenheben(target: Int?, @Suppress("UNUSED_PARAMETER") preset: Preset) :
-    Armheben(target, maxAngle = 70.0) {
+class Seitenheben(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) :
+    Armheben(target, maxAngle = THRESHOLDS.valueOf(MAX_ANGLE, preset, values)) {
     override val id = ExerciseId.SEITENHEBEN
+
+    companion object {
+        val THRESHOLDS = maxAngle(voll = 70.0)
+    }
 }
 
-class FlexionSchulter(target: Int?, preset: Preset) :
-    Armheben(target, maxAngle = if (preset == Preset.EINFACH) 110.0 else 140.0) {
+class FlexionSchulter(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) :
+    Armheben(target, maxAngle = THRESHOLDS.valueOf(MAX_ANGLE, preset, values)) {
     override val id = ExerciseId.FLEXION_SCHULTER
+
+    companion object {
+        val THRESHOLDS = maxAngle(voll = 140.0, einfach = 110.0)
+    }
 }
 
 // Einfach = Voll, wie Seitheben
-class MobilisationSchulter(target: Int?, @Suppress("UNUSED_PARAMETER") preset: Preset) :
-    Armheben(target, maxAngle = 70.0) {
+class MobilisationSchulter(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) :
+    Armheben(target, maxAngle = THRESHOLDS.valueOf(MAX_ANGLE, preset, values)) {
     override val id = ExerciseId.MOBILISATION_SCHULTER
+
+    companion object {
+        val THRESHOLDS = maxAngle(voll = 70.0)
+    }
 }

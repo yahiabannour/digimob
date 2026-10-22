@@ -21,12 +21,16 @@ import java.io.File
 
 /**
  * python/systest.py in Kotlin: die Keypoints einer Aufnahme (keypoints_full.jsonl) Frame fuer
- * Frame in die Uebung, gezaehlt wird wie in "Aufnahmen testen" (target = null) mit dem Preset der
+ * Frame in die Uebung, gezaehlt wird ohne Ziel (target = null) mit dem Preset der
  * Aufnahme. Gezaehlt werden muss genau expected_reps, und jede Seite wie erwartet.
+ * Welche Liste, legt die Gradle-Aufgabe fest: systemTest python/systest.txt (PC-Webcam, Keypoints von
+ * Python-MediaPipe), tabletTest android/systest_tablet.txt (Tablet-Kamera, Android-MediaPipe,
+ * Testname "tablet/...").
  */
 class SystemTest {
 
-    @ParameterizedTest(name = "{0}")
+    // Die Tablet-Liste darf leer sein (noch keine Aufnahmen), dann laeuft kein Fall
+    @ParameterizedTest(name = "{0}", allowZeroInvocations = true)
     @MethodSource("recordings")
     fun `zaehlt die Wiederholungen der Aufnahme`(keypoints: File) {
         val summary = Json.parseToJsonElement(keypoints.resolveSibling("summary.json").readText()).jsonObject
@@ -57,16 +61,25 @@ class SystemTest {
     }
 
     @Test
-    fun `systest txt nennt Aufnahmen`() {
-        // Sonst liefe der parametrisierte Test ohne Fall und meldete trotzdem Erfolg
-        assertThat(recordingFiles()).isNotEmpty()
+    fun `die Liste nennt Aufnahmen`() {
+        val files = recordingFiles()
+        if (root == android) {
+            if (files.isEmpty()) println("$list nennt noch keine Aufnahmen: erst aufnehmen, dann tools/pull_recordings.sh")
+        } else {
+            // Sonst liefe der parametrisierte Test ohne Fall und meldete trotzdem Erfolg
+            assertThat(files).isNotEmpty()
+        }
     }
 
     companion object {
-        private val root = File(System.getProperty("digimob.python") ?: error("digimob.python fehlt"))
+        private fun property(name: String) = System.getProperty(name) ?: error("$name fehlt (nur ueber Gradle starten)")
+        private val root = File(property("digimob.root"))
+        private val list = property("digimob.list")
+        private val android = File(property("digimob.android"))
 
+        /** Eine Keypoints-Datei je Zeile, Pfad relativ zum Ordner der Liste; # und Leerzeilen zaehlen nicht. */
         private fun recordingFiles(): List<File> =
-            root.resolve("systest.txt").readLines()
+            root.resolve(list).readLines()
                 .map { it.trim() }
                 .filter { it.isNotEmpty() && !it.startsWith("#") }
                 .map { root.resolve(it) }
@@ -74,8 +87,11 @@ class SystemTest {
         @JvmStatic
         fun recordings(): List<Named<File>> = recordingFiles().map { Named.of(name(it), it) }
 
-        // z.B. "abduktion/rec1", wie die Testnamen von systest.py
-        private fun name(keypoints: File): String = "${keypoints.parentFile.parentFile.name}/${keypoints.parentFile.name}"
+        // z.B. "abduktion/rec1" wie die Testnamen von systest.py, vom Tablet "tablet/abduktion/rec1"
+        private fun name(keypoints: File): String {
+            val recording = "${keypoints.parentFile.parentFile.name}/${keypoints.parentFile.name}"
+            return if (keypoints.startsWith(android)) "tablet/$recording" else recording
+        }
 
         private fun landmark(element: kotlinx.serialization.json.JsonElement): Landmark {
             val v = element.jsonArray.map { it.jsonPrimitive.doubleOrNull }

@@ -23,6 +23,12 @@ class ArmhebenTest {
     }
 
     @Test
+    fun `Huefte unter dem Bildrand und unsichtbar zaehlt trotzdem (Tablet, nah vor der Kamera)`() {
+        val hipOut = { angle: Double -> armPose(arm = angle to angle, hipInPicture = false) }
+        assertThat(count(hipOut(20.0) * 6 + hipOut(160.0) * 6 + hipOut(20.0) * 6)).isEqualTo(one)
+    }
+
+    @Test
     fun `oben am Anfang zaehlt nicht (erst die Startposition)`() {
         assertThat(count(up * 6 + down * 6)).isEqualTo(none)
     }

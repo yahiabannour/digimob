@@ -16,14 +16,14 @@ import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 import de.mhh.digimob.feature.menu.presentation.R
 
 /**
- * Hauptmenue. Kein ViewModel: jeder Knopf navigiert nur. "Aufnahmen testen" nur in der
- * Entwickler-Version (Debug-Build), im Krankenhaus gibt es die Aufnahmen-Videos nicht.
+ * Hauptmenue. Kein ViewModel: jeder Knopf navigiert nur. "Aufnehmen" (Aufnahmen mit Ground Truth
+ * fuer den Systemtest, tools/record_exercise.py) nur in der Entwickler-Version (Debug-Build).
  */
 @Composable
 fun MainMenuScreen(
-    showRecordingTest: Boolean,
+    showRecording: Boolean,
     onChooseExercisesClick: () -> Unit,
-    onRecordingTestClick: () -> Unit,
+    onRecordClick: () -> Unit,
     onQuitClick: () -> Unit
 ) {
     PageScaffold(title = stringResource(R.string.main_menu_title)) {
@@ -33,8 +33,8 @@ fun MainMenuScreen(
                 onClick = onChooseExercisesClick,
                 kind = ButtonKind.PRIMAER
             )
-            if (showRecordingTest) {
-                DigiMobButton(text = stringResource(R.string.recording_test), onClick = onRecordingTestClick)
+            if (showRecording) {
+                DigiMobButton(text = stringResource(R.string.record), onClick = onRecordClick)
             }
             Spacer(modifier = Modifier.height(32.dp))
             DigiMobButton(text = stringResource(R.string.quit), onClick = onQuitClick, kind = ButtonKind.GEFAHR)
@@ -47,7 +47,7 @@ fun MainMenuScreen(
 @Composable
 private fun MainMenuScreenPreview() {
     DigiMobTheme {
-        MainMenuScreen(showRecordingTest = false, onChooseExercisesClick = {}, onRecordingTestClick = {}, onQuitClick = {})
+        MainMenuScreen(showRecording = false, onChooseExercisesClick = {}, onRecordClick = {}, onQuitClick = {})
     }
 }
 
@@ -55,6 +55,6 @@ private fun MainMenuScreenPreview() {
 @Composable
 private fun MainMenuScreenDeveloperPreview() {
     DigiMobTheme {
-        MainMenuScreen(showRecordingTest = true, onChooseExercisesClick = {}, onRecordingTestClick = {}, onQuitClick = {})
+        MainMenuScreen(showRecording = true, onChooseExercisesClick = {}, onRecordClick = {}, onQuitClick = {})
     }
 }

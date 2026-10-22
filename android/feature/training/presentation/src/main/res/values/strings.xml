@@ -1,6 +1,6 @@
-<resources>
-    <string name="training_title">Reha-Übungen</string>
-    <string name="exercise_progress">Übung %1$d von %2$d</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="exercise_progress" tools:ignore="PluralsCandidate">Übung %1$d von %2$d</string>
+    <string name="demo_skip_hint">Doppeltippen zum Überspringen</string>
     <string name="word_remaining">noch</string>
     <string name="word_counted">gezählt</string>
     <string name="bar_description">%1$s %2$d</string>
@@ -17,17 +17,29 @@
     <string name="error_no_camera">Die Kamera konnte nicht geöffnet werden.</string>
     <string name="error_camera_failed">Die Kamera liefert keine Bilder mehr.</string>
     <string name="error_pose_failed">Die Übung wurde wegen eines Fehlers beendet (Details im Log).</string>
-    <string name="error_video_unreadable">Das Video ist nicht lesbar.</string>
     <string name="error_permission">Ohne Erlaubnis für die Kamera kann die Übung nicht starten. Bitte in den Einstellungen des Tablets erlauben.</string>
 
-    <string name="recording_test_title">Aufnahmen testen</string>
-    <string name="recording_running">%1$s (%2$d von %3$d)</string>
-    <string name="recording_done">Fertig: %1$d von %2$d OK</string>
-    <string name="recording_ok">OK</string>
-    <string name="recording_deviates">abweichend</string>
-    <string name="recording_no_truth">ohne Erwartung</string>
-    <string name="recording_unreadable">Video nicht lesbar</string>
-    <string name="recording_counts">gezählt %1$s, erwartet %2$s</string>
-    <string name="recording_side_counts">links %1$d, rechts %2$d</string>
-    <string name="recording_missing">videomodus.txt fehlt im App-Ordner (Android/data/de.mhh.digimob/files/).</string>
+    <!-- Aufnehmen (nur Debug-Build), wie tools/record_exercise.py -->
+    <string name="recording_title">Aufnehmen</string>
+    <string name="recording_start">Aufnahme starten</string>
+    <string name="recording_stop">Aufnahme beenden</string>
+    <string name="recording_save">Speichern</string>
+    <string name="recording_discard">Verwerfen</string>
+    <string name="recording_hint">In der Startposition der Übung beginnen und enden.</string>
+    <string name="recording_status_ready">Bereit</string>
+    <string name="recording_status_running">REC %1$s s · Frames: %2$d · Pose %3$s</string>
+    <string name="recording_pose_yes">ja</string>
+    <string name="recording_pose_no">nein</string>
+    <string name="recording_status_labeling">Wie viele Wiederholungen wurden gemacht?</string>
+    <string name="recording_ground_truth_hint">Selbst gezählt eintragen, nicht die Zahl der App: das ist die Ground Truth für den Test.</string>
+    <string name="recording_left">Links</string>
+    <string name="recording_right">Rechts</string>
+    <string name="recording_reps">Anzahl</string>
+    <string name="recording_counted_sides">App zählt: links %1$d, rechts %2$d</string>
+    <string name="recording_counted">App zählt: %1$d</string>
+    <string name="recording_no_video">Ohne Video: die Kamera kann Pose und Video nicht zugleich, gespeichert werden nur die Keypoints.</string>
+    <string name="recording_saved">%1$s gespeichert: Ground Truth %2$d, Frames: %3$d, %4$s fps, ohne Video</string>
+    <string name="recording_saved_video">%1$s gespeichert: Ground Truth %2$d, Frames: %3$d, %4$s fps, mit Video</string>
+    <string name="recording_error_disk_full">Der Speicher ist voll, die Aufnahme wurde nicht gespeichert.</string>
+    <string name="recording_error_unknown">Die Aufnahme konnte nicht gespeichert werden (Details im Log).</string>
 </resources>

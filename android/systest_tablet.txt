@@ -1,0 +1,33 @@
+# Systemtest mit Aufnahmen vom Tablet: ./gradlew :core:domain:tabletTest (nur diese Liste; nur Kotlin,
+# pytest liest sie nicht; systemTest spielt die PC-Aufnahmen aus python/systest.txt).
+# Wie python/systest.txt, nur mit der Tablet-Kamera: die Keypoints hat Android-MediaPipe
+# erkannt, mit der Bildrate des Tablets (~10 fps statt ~30 am PC).
+#
+# Aufnehmen: Debug-Build, Hauptmenue "Aufnehmen": Uebung und Preset waehlen, in der Startposition
+# beginnen und enden, danach die selbst gezaehlten Wiederholungen eintragen (Ground Truth).
+# Abholen: tools/pull_recordings.sh holt die fertigen Aufnahmen nach recordings/<uebung>/rec<N>/ und
+# traegt sie hier ein.
+#
+# Eine Keypoints-Datei pro Zeile (Pfad relativ zu android/), Zeilen mit # werden uebersprungen.
+# Gezaehlt werden muss genau expected_reps (summary.json), sonst faellt der Test durch. Eine
+# Aufnahme, in der die Uebung zu Recht anders zaehlt (z.B. falsch ausgefuehrt), mit # auskommentieren
+# und den Grund dazuschreiben.
+
+recordings/abduktion/rec1/keypoints_full.jsonl
+recordings/abduktion/rec2/keypoints_full.jsonl
+recordings/abduktion/rec3/keypoints_full.jsonl
+recordings/bizepscurls/rec1/keypoints_full.jsonl
+recordings/bizepscurls/rec2/keypoints_full.jsonl
+recordings/bizepscurls/rec3/keypoints_full.jsonl
+recordings/butterfly/rec1/keypoints_full.jsonl
+recordings/flexion_schulter/rec1/keypoints_full.jsonl
+recordings/flexion_schulter/rec2/keypoints_full.jsonl
+recordings/flexion_schulter/rec3/keypoints_full.jsonl
+recordings/halswirbelsaeule/rec1/keypoints_full.jsonl
+recordings/mobilisation_schulter/rec1/keypoints_full.jsonl
+recordings/mobilisation_schulter/rec2/keypoints_full.jsonl
+recordings/mobilisation_schulter/rec3/keypoints_full.jsonl
+recordings/rotation/rec1/keypoints_full.jsonl
+recordings/seitenheben/rec1/keypoints_full.jsonl
+recordings/seitenheben/rec2/keypoints_full.jsonl
+recordings/seitenheben/rec3/keypoints_full.jsonl

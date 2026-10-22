@@ -5,7 +5,8 @@ package de.mhh.digimob.core.domain.exercise
  * zaehlt. Die Butterfly-Haltung ist bewusst kein ready()-Gate: Meldung und Ansagen laufen ab der
  * ersten erkannten Pose, gezaehlt und im Balken angezeigt wird nur in Haltung.
  */
-class Butterfly(target: Int?, preset: Preset) : Exercise(target, sides = listOf(Side.BOTH)) {
+class Butterfly(target: Int?, preset: Preset = Preset.VOLL, values: Thresholds = emptyMap()) :
+    Exercise(target, sides = listOf(Side.BOTH)) {
     override val id = ExerciseId.BUTTERFLY
     override val barStyle = BarStyle.SINGLE
     override val praise = false
@@ -13,9 +14,9 @@ class Butterfly(target: Int?, preset: Preset) : Exercise(target, sides = listOf(
     private enum class Stage { MIN, MAX }
 
     /** Arme geoeffnet (Ziel). Einfach: rund 20 % weniger weit oeffnen. */
-    val maxDistance: Double = if (preset == Preset.EINFACH) 1.5 else 1.8
+    val maxDistance: Double = THRESHOLDS.valueOf(MAX_DISTANCE_KEY, preset, values)
 
-    override val thresholds: Map<String, Double> get() = mapOf("max_distance" to maxDistance)
+    override val thresholds: Thresholds get() = mapOf(MAX_DISTANCE_KEY to maxDistance)
 
     private var stage: Stage? = null
     private var armUp = mapOf<Side, Boolean>()
@@ -26,7 +27,7 @@ class Butterfly(target: Int?, preset: Preset) : Exercise(target, sides = listOf(
         val arms = listOf(Side.LEFT, Side.RIGHT)
         val shoulder = arms.associateWith { side ->
             ExerciseMath.angle(
-                pose.xy(Landmarks.HUEFTE.getValue(side)),
+                pose.hip(side),
                 pose.xy(Landmarks.SCHULTER.getValue(side)),
                 pose.xy(Landmarks.ELLBOGEN.getValue(side))
             )
@@ -68,6 +69,13 @@ class Butterfly(target: Int?, preset: Preset) : Exercise(target, sides = listOf(
     override fun back(side: Side): Boolean = stage == Stage.MAX    // offen gewesen, zaehlt erst vorne
 
     companion object {
+        const val MAX_DISTANCE_KEY = "max_distance"
+        val LANDMARKS = Landmarks.ARME
+        val THRESHOLDS = listOf(
+            // ueber MIN_DISTANCE, sonst zaehlt jedes Bild
+            Threshold(MAX_DISTANCE_KEY, voll = 1.8, einfach = 1.5, range = 1.2..3.0, unit = ThresholdUnit.TIMES)
+        )
+
         const val MIN_SHOULDER = 70.0   // Oberarm so weit gehoben zaehlt als Butterfly-Haltung
         const val MIN_DISTANCE = 1.0    // Arme vorne zusammen
     }

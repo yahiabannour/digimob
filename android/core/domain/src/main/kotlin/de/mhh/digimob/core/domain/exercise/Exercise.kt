@@ -4,9 +4,10 @@ package de.mhh.digimob.core.domain.exercise
 enum class Side { LEFT, RIGHT, BOTH }
 
 /**
- * Wie die Oberflaeche die Balken zeichnet: SPLIT = ein senkrechter Balken je Seite, CENTER = ein
- * waagerechter Balken, der aus der Mitte nach links/rechts waechst (Kopfdrehung), SINGLE = ein
- * Balken (Seite BOTH).
+ * Wie die Oberflaeche die Balken zeichnet: SPLIT = ein senkrechter Balken je Seite neben dem Video,
+ * CENTER = ein waagerechter Balken unter dem Video, der aus der Mitte nach links/rechts waechst
+ * (Kopfdrehung), SINGLE = ein Balken (Seite BOTH) unter dem Video, der aus der Mitte nach beiden
+ * Seiten waechst (Arme oeffnen).
  */
 enum class BarStyle { SPLIT, CENTER, SINGLE }
 
@@ -16,9 +17,9 @@ enum class Preset { VOLL, EINFACH }
 /** Die Meldung im Videobild; den Text waehlt die Oberflaeche. */
 sealed interface ExerciseMessage {
     data object Start : ExerciseMessage                 // "Jetzt koennen Sie mit dieser Uebung starten"
-    data class Target(val repetitions: Int, val praise: Boolean) : ExerciseMessage  // "Super, versuchen Sie N mal ..."
+    data class Target(val repetitions: Int, val praise: Boolean) : ExerciseMessage  // "Okay, versuchen Sie N mal ..."
     data object Done : ExerciseMessage                  // "Prima, gute Leistung!"
-    data object CountOnly : ExerciseMessage             // Aufnahmen testen: nur zaehlen
+    data object CountOnly : ExerciseMessage             // ohne Ziel (Systemtest): nur zaehlen
 }
 
 const val OVER_TARGET = 1.25    // der Balken reicht ein Viertel ueber das Ziel: die Ziellinie liegt bei 80 %
@@ -37,7 +38,7 @@ data class Bar(val fill: Double?, val back: Boolean, val count: Int, val countOn
  * Eine Uebung fuellt measure(), count() und fill() aus, bei Bedarf ready() (Gate, z.B. Oberarme am
  * Koerper), lost() (kein gueltiger Messwert) und back().
  *
- * target = null: nur zaehlen (Aufnahmen testen), nie done.
+ * target = null: nur zaehlen (Systemtest), nie done.
  */
 abstract class Exercise(
     val target: Int?,
@@ -46,11 +47,11 @@ abstract class Exercise(
     abstract val id: ExerciseId
     open val barStyle: BarStyle = BarStyle.SPLIT
 
-    /** Butterfly und Rotation sagen "Versuchen Sie ..." ohne "Super,". */
+    /** Butterfly und Rotation sagen "Versuchen Sie ..." ohne "Okay,". */
     open val praise: Boolean = true
 
-    /** Die Schwellen dieses Durchgangs (Name wie in Python -> Wert), z.B. fuer "Voll = Einfach". */
-    abstract val thresholds: Map<String, Double>
+    /** Die Schwellen dieses Durchgangs (Name wie in Python -> Wert). */
+    abstract val thresholds: Thresholds
 
     private val _counter = sides.associateWith { 0 }.toMutableMap()
     val counter: Map<Side, Int> get() = _counter
@@ -109,7 +110,7 @@ abstract class Exercise(
     }
 
     /**
-     * Im Videobild: verbleibende Wiederholungen, im Aufnahmen-Test die gezaehlten. Nie unter 0:
+     * Im Videobild: verbleibende Wiederholungen, ohne Ziel die gezaehlten. Nie unter 0:
      * eine Seite, die vorne liegt, zaehlt weiter, bis die andere das Ziel erreicht.
      */
     fun shownCount(side: Side): Int {

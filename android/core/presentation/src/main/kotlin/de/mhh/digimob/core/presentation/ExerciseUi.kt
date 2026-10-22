@@ -7,6 +7,9 @@ import de.mhh.digimob.core.domain.exercise.ExerciseMessage
 import de.mhh.digimob.core.domain.exercise.OpType
 import de.mhh.digimob.core.domain.exercise.PostOpDay
 import de.mhh.digimob.core.domain.exercise.Preset
+import de.mhh.digimob.core.domain.exercise.Threshold
+import de.mhh.digimob.core.domain.exercise.ThresholdUnit
+import java.util.Locale
 
 /** Titel im Menue und im Videobild. */
 @get:StringRes
@@ -28,6 +31,23 @@ val Preset.labelRes: Int
         Preset.VOLL -> R.string.preset_voll
         Preset.EINFACH -> R.string.preset_einfach
     }
+
+/** Beschriftung des Schiebereglers einer Schwelle (Python: das schwellen-Dict der Uebung). */
+@StringRes
+fun ExerciseId.thresholdLabelRes(key: String): Int = when (this) {
+    ExerciseId.ABDUKTION, ExerciseId.SEITENHEBEN, ExerciseId.FLEXION_SCHULTER, ExerciseId.MOBILISATION_SCHULTER ->
+        R.string.threshold_arm_up
+    ExerciseId.BIZEPSCURLS -> if (key == "max_shoulder") R.string.threshold_upper_arm else R.string.threshold_arm_bent
+    ExerciseId.BUTTERFLY -> R.string.threshold_arms_open
+    ExerciseId.ROTATION -> R.string.threshold_forearms_out
+    ExerciseId.HALSWIRBELSAEULE -> R.string.threshold_head_turn
+}
+
+/** Der Wert mit Einheit, wie ihn der Schieberegler zeigt: "150°", "1,80x". */
+fun Threshold.format(value: Double): String = when (unit) {
+    ThresholdUnit.DEGREES -> "${value.toLong()}°"
+    ThresholdUnit.TIMES -> String.format(Locale.GERMANY, "%.2fx", value)
+}
 
 @get:StringRes
 val OpType.labelRes: Int
@@ -58,6 +78,5 @@ fun ExerciseMessage.toUiText(): UiText = when (this) {
 
 fun DataError.toUiText(): UiText = when (this) {
     DataError.Local.DISK_FULL -> UiText.StringResource(R.string.error_disk_full)
-    DataError.Local.NOT_FOUND -> UiText.StringResource(R.string.error_not_found)
     DataError.Local.UNKNOWN -> UiText.StringResource(R.string.error_unknown)
 }

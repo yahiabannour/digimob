@@ -15,7 +15,6 @@ class ButterflyRotationTest {
         val handY = if (armUp) 0.2 else 0.55        // Hand ueber bzw. unter dem Ellbogen
         val elbowY = if (armUp) shoulderY else 0.5
         points[11] = Point(0.4, shoulderY); points[12] = Point(0.6, shoulderY)       // Schulterbreite 0.2
-        points[23] = Point(0.4, 0.8); points[24] = Point(0.6, 0.8)
         points[13] = Point(0.5 - wrists / 2, elbowY); points[14] = Point(0.5 + wrists / 2, elbowY)
         points[15] = Point(0.5 - wrists / 2, handY); points[16] = Point(0.5 + wrists / 2, handY)
         return Pose(points.map { Landmark(it.x, it.y, 0.0, 1.0, 1.0) }, 640, 480)
@@ -55,7 +54,6 @@ class ButterflyRotationTest {
     private fun rotationPose(wrists: Double, shoulderAngle: Double = 10.0): Pose {
         val points = MutableList(33) { Point(0.5, 0.6) }
         points[11] = Point(0.4, 0.4); points[12] = Point(0.6, 0.4)
-        points[23] = Point(0.4, 0.8); points[24] = Point(0.6, 0.8)
         val a = Math.toRadians(shoulderAngle)
         points[13] = Point(0.4 - 0.2 * kotlin.math.sin(a), 0.4 + 0.2 * kotlin.math.cos(a))
         points[14] = Point(0.6 + 0.2 * kotlin.math.sin(a), 0.4 + 0.2 * kotlin.math.cos(a))

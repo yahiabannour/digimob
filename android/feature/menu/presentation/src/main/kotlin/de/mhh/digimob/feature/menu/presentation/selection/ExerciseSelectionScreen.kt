@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -25,14 +26,18 @@ import de.mhh.digimob.core.designsystem.components.ButtonKind
 import de.mhh.digimob.core.designsystem.components.DigiMobButton
 import de.mhh.digimob.core.designsystem.components.DigiMobSegmentedToggle
 import de.mhh.digimob.core.designsystem.components.DigiMobSelectButton
+import de.mhh.digimob.core.designsystem.components.DigiMobSlider
 import de.mhh.digimob.core.designsystem.components.PageScaffold
 import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 import de.mhh.digimob.core.domain.exercise.ExerciseCatalog
 import de.mhh.digimob.core.domain.exercise.ExerciseId
 import de.mhh.digimob.core.domain.exercise.OpType
 import de.mhh.digimob.core.domain.exercise.Preset
+import de.mhh.digimob.core.domain.exercise.Thresholds
 import de.mhh.digimob.core.presentation.UiText
+import de.mhh.digimob.core.presentation.format
 import de.mhh.digimob.core.presentation.labelRes
+import de.mhh.digimob.core.presentation.thresholdLabelRes
 import de.mhh.digimob.core.presentation.titleRes
 import de.mhh.digimob.feature.menu.presentation.R
 import org.koin.compose.viewmodel.koinViewModel
@@ -74,7 +79,9 @@ fun ExerciseSelectionScreen(
                     ExerciseRow(
                         row = row,
                         onExerciseClick = { onAction(ExerciseSelectionAction.OnExerciseClick(row.id)) },
-                        onPresetSelect = { onAction(ExerciseSelectionAction.OnPresetSelect(row.id, it)) }
+                        onPresetSelect = { onAction(ExerciseSelectionAction.OnPresetSelect(row.id, it)) },
+                        onThresholdChange = { key, value -> onAction(ExerciseSelectionAction.OnThresholdChange(row.id, key, value)) },
+                        onThresholdChangeFinished = { onAction(ExerciseSelectionAction.OnThresholdChangeFinished(row.id)) }
                     )
                 }
             }
@@ -99,59 +106,111 @@ fun ExerciseSelectionScreen(
             onDismissRequest = { onAction(ExerciseSelectionAction.OnErrorDismiss) },
             confirmButton = {
                 TextButton(onClick = { onAction(ExerciseSelectionAction.OnErrorDismiss) }) {
-                    Text(stringResource(R.string.ok))
+                    Text(stringResource(CoreR.string.ok))
                 }
             },
-            title = { Text(stringResource(R.string.error_title)) },
+            title = { Text(stringResource(R.string.error_save_title)) },
             text = { Text(error.asString()) }
         )
     }
 }
 
-/** Eine Uebung: Auswahlflaeche, daneben immer ihr Preset (gilt auch, wenn nicht angekreuzt). */
+/**
+ * Eine Uebung in einer Zeile wie in der Python-App: Auswahlflaeche, Voll/Einfach, welches Preset
+ * gilt, und ein Schieberegler je Schwelle. Die Schwellen gelten auch, wenn nicht angekreuzt.
+ */
 @Composable
 private fun ExerciseRow(
     row: ExerciseRowUi,
     onExerciseClick: () -> Unit,
     onPresetSelect: (Preset) -> Unit,
+    onThresholdChange: (key: String, value: Double) -> Unit,
+    onThresholdChangeFinished: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         DigiMobSelectButton(text = stringResource(row.titleRes), selected = row.isChecked, onClick = onExerciseClick)
         DigiMobSegmentedToggle(
             options = Preset.entries.map { stringResource(it.labelRes) },
-            selected = if (row.presetsEqual) Preset.entries.indices.toSet() else setOf(row.preset.ordinal),
+            selected = row.presets.map { it.ordinal }.toSet(),
             onSelect = { onPresetSelect(Preset.entries[it]) }
         )
-        if (row.presetsEqual) {
-            Text(
-                text = stringResource(CoreR.string.preset_equal),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Text(
+            text = presetText(row),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (row.isInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(120.dp)
+        )
+        // Unten ausgerichtet: bricht eine Beschriftung um, liegen die Regler trotzdem auf einer Linie
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            row.thresholds.forEach { threshold ->
+                DigiMobSlider(
+                    label = stringResource(threshold.labelRes) + ": " + threshold.valueText,
+                    value = threshold.value.toFloat(),
+                    valueRange = threshold.range,
+                    steps = threshold.steps,
+                    onValueChange = { onThresholdChange(threshold.key, it.toDouble()) },
+                    onValueChangeFinished = onThresholdChangeFinished,
+                    isError = row.isInvalid,
+                    // 260 dp, zwei in einer Zeile (Bizepscurls) teilen sich den Platz gleich
+                    modifier = Modifier.weight(1f, fill = false).width(260.dp)
+                )
+            }
         }
     }
 }
 
-private fun previewState(opType: OpType, checked: Set<ExerciseId> = emptySet(), error: UiText? = null) =
-    ExerciseSelectionState(
-        opType = opType,
-        target = 5,
-        rows = opType.exercises.map {
-            ExerciseRowUi(
-                id = it,
-                titleRes = it.titleRes,
-                isChecked = it in checked,
-                preset = if (it == ExerciseId.BIZEPSCURLS) Preset.EINFACH else Preset.VOLL,
-                presetsEqual = ExerciseCatalog.presetsEqual(it)
-            )
-        },
-        error = error
-    )
+/** preset_text(): "Voll", "Einfach", "Voll = Einfach", "angepasst" oder "ungültig". */
+@Composable
+private fun presetText(row: ExerciseRowUi): String = when {
+    row.isInvalid -> stringResource(CoreR.string.preset_invalid)
+    row.presets.isEmpty() -> stringResource(CoreR.string.preset_custom)
+    else -> {
+        val labels = Preset.entries.associateWith { stringResource(it.labelRes) }
+        row.presets.sorted().joinToString(" = ") { labels.getValue(it) }
+    }
+}
+
+private fun previewState(
+    opType: OpType,
+    checked: Set<ExerciseId> = emptySet(),
+    custom: Map<ExerciseId, Thresholds> = emptyMap(),
+    invalid: Set<ExerciseId> = emptySet(),
+    error: UiText? = null
+) = ExerciseSelectionState(
+    opType = opType,
+    target = 5,
+    rows = opType.exercises.map { id ->
+        val preset = if (id == ExerciseId.BIZEPSCURLS) Preset.EINFACH else Preset.VOLL
+        val values = custom[id] ?: ExerciseCatalog.values(id, preset)
+        ExerciseRowUi(
+            id = id,
+            titleRes = id.titleRes,
+            isChecked = id in checked,
+            presets = if (id in invalid) emptySet() else ExerciseCatalog.presetsOf(id, values),
+            isInvalid = id in invalid,
+            thresholds = ExerciseCatalog.thresholds(id).map { threshold ->
+                ThresholdUi(
+                    key = threshold.key,
+                    labelRes = id.thresholdLabelRes(threshold.key),
+                    value = values.getValue(threshold.key),
+                    valueText = threshold.format(values.getValue(threshold.key)),
+                    range = threshold.range.start.toFloat()..threshold.range.endInclusive.toFloat(),
+                    steps = 0
+                )
+            }
+        )
+    },
+    error = error
+)
 
 @Preview(name = "Bauch-OP, nichts gewaehlt", widthDp = 1280, heightDp = 800)
 @Preview(name = "Bauch-OP dunkel", widthDp = 1280, heightDp = 800, uiMode = UI_MODE_NIGHT_YES)
@@ -168,6 +227,24 @@ private fun ExerciseSelectionScreenCheckedPreview() {
     DigiMobTheme {
         ExerciseSelectionScreen(
             previewState(OpType.BRUST_OP, checked = setOf(ExerciseId.BUTTERFLY, ExerciseId.ROTATION)),
+            onAction = {},
+            onStartTraining = { _, _ -> },
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(name = "Angepasst und ungueltig", widthDp = 1280, heightDp = 800)
+@Composable
+private fun ExerciseSelectionScreenCustomPreview() {
+    DigiMobTheme {
+        ExerciseSelectionScreen(
+            previewState(
+                OpType.BAUCH_OP,
+                checked = setOf(ExerciseId.ABDUKTION),
+                custom = mapOf(ExerciseId.ABDUKTION to mapOf("max_angle" to 135.0)),
+                invalid = setOf(ExerciseId.BIZEPSCURLS)
+            ),
             onAction = {},
             onStartTraining = { _, _ -> },
             onBackClick = {}

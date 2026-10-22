@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -82,7 +83,7 @@ internal fun VerticalBar(bar: BarUi, modifier: Modifier = Modifier) {
             if (bar.confirm) {
                 drawCheck(colors, center.copy(y = bottom / 2), barWidth * 0.8f)
             } else if (bar.back) {
-                drawArrowDown(colors, center.copy(y = (y + bottom) / 2), barWidth * 0.8f)
+                drawArrow(colors, center.copy(y = (y + bottom) / 2), barWidth * 0.8f)
             }
         }
     }
@@ -94,33 +95,60 @@ internal fun VerticalBar(bar: BarUi, modifier: Modifier = Modifier) {
  */
 @Composable
 internal fun CenterBar(left: BarUi, right: BarUi, modifier: Modifier = Modifier) {
-    val colors = DigiMobTheme.colors
     Column(modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             CenterBarLabel(left)
             Spacer(modifier = Modifier.weight(1f))
             CenterBarLabel(right)
         }
-        Canvas(modifier = Modifier.fillMaxWidth().height(40.dp)) {
-            val middle = size.width / 2
-            val half = size.width / 2
-            for ((bar, direction) in listOf(left to -1, right to 1)) {
-                fun at(fill: Double) = middle + direction * half * (minOf(fill, OVER_TARGET) / OVER_TARGET).toFloat()
-                if (bar.confirm) {
-                    drawRect(colors.barConfirm, Offset(minOf(middle, at(OVER_TARGET)), 0f), Size(half, size.height))
-                }
-                bar.fill?.takeIf { it > 0 }?.let { fill ->
-                    drawRect(barColor(colors, fill), Offset(minOf(middle, at(fill)), 0f), Size(kotlin.math.abs(at(fill) - middle), size.height))
-                }
-                bar.peak?.let { peak ->
-                    drawLine(colors.barPeak, Offset(at(peak), 0f), Offset(at(peak), size.height), strokeWidth = 5.dp.toPx())
-                }
-                drawLine(colors.barLine, Offset(at(1.0), 0f), Offset(at(1.0), size.height), strokeWidth = 4.dp.toPx())
-                if (bar.confirm) drawCheck(colors, Offset(at(1.0) + direction * 30.dp.toPx(), size.height / 2), size.height * 0.9f)
+        HorizontalBarCanvas(left, right, Modifier.fillMaxWidth().height(40.dp))
+    }
+}
+
+/**
+ * Ein Balken unter dem Video (Butterfly, Rotation): waechst aus der Mitte nach beiden Seiten, wie
+ * die Arme beim Oeffnen, mit einer Ziellinie je Seite. Ziel erreicht: die Pfeile zeigen zur Mitte,
+ * die Haende wieder zusammen. Darueber mittig die Zahl.
+ */
+@Composable
+internal fun SpreadBar(bar: BarUi, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        CenterBarLabel(bar)
+        HorizontalBarCanvas(bar, bar, Modifier.fillMaxWidth().height(56.dp))
+    }
+}
+
+/**
+ * Die Flaeche der waagerechten Balken: [left] fuellt von der Mitte nach links, [right] nach
+ * rechts. back: ein Pfeil in der Haelfte zeigt zur Mitte zurueck.
+ */
+@Composable
+private fun HorizontalBarCanvas(left: BarUi, right: BarUi, modifier: Modifier = Modifier) {
+    val colors = DigiMobTheme.colors
+    Canvas(modifier = modifier) {
+        val middle = size.width / 2
+        val half = size.width / 2
+        for ((bar, direction) in listOf(left to -1, right to 1)) {
+            fun at(fill: Double) = middle + direction * half * (minOf(fill, OVER_TARGET) / OVER_TARGET).toFloat()
+            if (bar.confirm) {
+                drawRect(colors.barConfirm, Offset(minOf(middle, at(OVER_TARGET)), 0f), Size(half, size.height))
             }
-            drawRect(colors.barLine, Offset.Zero, size, style = Stroke(1.dp.toPx()))
-            drawLine(colors.barLine, Offset(middle, 0f), Offset(middle, size.height), strokeWidth = 3.dp.toPx())
+            bar.fill?.takeIf { it > 0 }?.let { fill ->
+                drawRect(barColor(colors, fill), Offset(minOf(middle, at(fill)), 0f), Size(kotlin.math.abs(at(fill) - middle), size.height))
+            }
+            bar.peak?.let { peak ->
+                drawLine(colors.barPeak, Offset(at(peak), 0f), Offset(at(peak), size.height), strokeWidth = 5.dp.toPx())
+            }
+            drawLine(colors.barLine, Offset(at(1.0), 0f), Offset(at(1.0), size.height), strokeWidth = 4.dp.toPx())
+            if (bar.confirm) {
+                drawCheck(colors, Offset(at(1.0) + direction * 30.dp.toPx(), size.height / 2), size.height * 0.9f)
+            } else if (bar.back) {
+                // Pfeil nach unten gedreht: links zeigt er nach rechts, rechts nach links (zur Mitte)
+                drawArrow(colors, Offset((middle + at(1.0)) / 2, size.height / 2), size.height * 0.7f, direction * 90f)
+            }
         }
+        drawRect(colors.barLine, Offset.Zero, size, style = Stroke(1.dp.toPx()))
+        drawLine(colors.barLine, Offset(middle, 0f), Offset(middle, size.height), strokeWidth = 3.dp.toPx())
     }
 }
 
@@ -179,21 +207,26 @@ private fun DrawScope.drawCheck(colors: DigiMobColors, center: Offset, size: Flo
     drawPath(path, colors.barCheck, style = Stroke(maxOf(4f, size / 7), cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-private fun DrawScope.drawArrowDown(colors: DigiMobColors, center: Offset, size: Float) {
+/** Pfeil nach unten, um [degrees] im Uhrzeigersinn um [center] gedreht (90 = nach links). */
+private fun DrawScope.drawArrow(colors: DigiMobColors, center: Offset, size: Float, degrees: Float = 0f) {
     val s = size / 2
     val shaft = size / 6
+    // Schaft und Spitze um center herum: so dreht sich der Pfeil auf der Stelle
+    val top = center.y - s * 1.35f
     val path = Path().apply {
-        moveTo(center.x - shaft, center.y - s * 1.6f)
-        lineTo(center.x + shaft, center.y - s * 1.6f)
-        lineTo(center.x + shaft, center.y)
-        lineTo(center.x + s, center.y)
-        lineTo(center.x, center.y + s * 1.1f)
-        lineTo(center.x - s, center.y)
-        lineTo(center.x - shaft, center.y)
+        moveTo(center.x - shaft, top)
+        lineTo(center.x + shaft, top)
+        lineTo(center.x + shaft, top + s * 1.6f)
+        lineTo(center.x + s, top + s * 1.6f)
+        lineTo(center.x, top + s * 2.7f)
+        lineTo(center.x - s, top + s * 1.6f)
+        lineTo(center.x - shaft, top + s * 1.6f)
         close()
     }
-    drawPath(path, colors.barArrow)
-    drawPath(path, Color.White, style = Stroke(3f))
+    rotate(degrees, pivot = center) {
+        drawPath(path, colors.barArrow)
+        drawPath(path, Color.White, style = Stroke(3f))
+    }
 }
 
 @Composable
@@ -226,7 +259,7 @@ private fun VerticalBarConfirmPreview() = VerticalBarPreviewBox(BarUi(fill = 0.3
 @Composable
 private fun VerticalBarPeakPreview() = VerticalBarPreviewBox(BarUi(fill = 0.4, peak = 0.9, count = 3))
 
-@Preview(name = "Aufnahmen testen: gezaehlt")
+@Preview(name = "Ohne Ziel: gezaehlt")
 @Composable
 private fun VerticalBarCountOnlyPreview() = VerticalBarPreviewBox(BarUi(fill = 0.7, count = 12, countOnly = true))
 
@@ -250,5 +283,28 @@ private fun CenterBarPreview() {
 private fun CenterBarEmptyPreview() {
     DigiMobTheme {
         CenterBar(left = BarUi(), right = BarUi(), modifier = Modifier.fillMaxWidth().height(90.dp))
+    }
+}
+
+@Preview(name = "Butterfly offen ueber dem Ziel, Pfeile zur Mitte", widthDp = 800)
+@Preview(name = "Butterfly dunkel", widthDp = 800, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun SpreadBarBackPreview() {
+    DigiMobTheme {
+        SpreadBar(
+            bar = BarUi(fill = 1.15, back = true, count = 4),
+            modifier = Modifier.background(DigiMobTheme.colors.barBackground).fillMaxWidth()
+        )
+    }
+}
+
+@Preview(name = "Butterfly halb, hoechster Punkt", widthDp = 800)
+@Composable
+private fun SpreadBarHalfPreview() {
+    DigiMobTheme {
+        SpreadBar(
+            bar = BarUi(fill = 0.5, peak = 0.8, count = 3),
+            modifier = Modifier.background(DigiMobTheme.colors.barBackground).fillMaxWidth()
+        )
     }
 }
