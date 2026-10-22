@@ -58,7 +58,7 @@ DigiMob is a project by **Prof. Hanno Homann** at Hochschule Hannover (Universit
 **Tanja Wysinsky**, a nurse at Hannover Medical School (MHH), used the app in her bachelor thesis (summer 2025) and
 gave medical advice on the exercises. She still uses the app today.
 
-I extended the project in autumn 2026. The commit history shows who contributed what.
+I extended the project in autumn 2026 and ported it to an Android tablet. The commit history shows who contributed what.
 
 ---
 
