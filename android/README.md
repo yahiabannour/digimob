@@ -14,6 +14,15 @@ Compared with the desktop app:
 
 Target device: Android 14 tablet (`minSdk` 34), landscape.
 
+| Main menu | Type of surgery and post-op day |
+|---|---|
+| ![Main menu](docs/hauptmenue.jpg) | ![Type of surgery](docs/operationsart.jpg) |
+| **Exercise selection with Voll/Einfach and sliders** | **Training screen during the intro (3D demo)** |
+| ![Exercise selection](docs/auswahl.jpg) | ![Training screen](docs/training.jpg) |
+
+*Screenshots from a Samsung Galaxy Tab A9+ (debug build, hence the Aufnehmen button). The training screen
+shows the 3D demo video, so no real person is visible.*
+
 ---
 
 ## Build, run, test
