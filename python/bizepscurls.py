@@ -13,13 +13,13 @@
 ******************************************************************************
 """
 from calculate_angle_distance import calculate_angle, calculate_progress
-from pose import ELLBOGEN, HANDGELENK, HUEFTE, SCHULTER
+from pose import ARME, ELLBOGEN, HANDGELENK, SCHULTER
 from uebung import UEBER_ZIEL, Haltezeit, Uebung
 
 
 class Bizepscurls(Uebung):
     title = "Bizepscurls"
-    name = "Bizepscurls"
+    landmarks = ARME
     demo = "demos/bizepscurls.mp4"
     intro = ("Sie fangen jetzt mit der Übung Bizepscurls an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")
@@ -60,7 +60,7 @@ class Bizepscurls(Uebung):
         self.shoulder, self.elbow = {}, {}
         for side in self.sides:
             schulter, ellbogen = pose.xy(SCHULTER[side]), pose.xy(ELLBOGEN[side])
-            self.shoulder[side] = calculate_angle(pose.xy(HUEFTE[side]), schulter, ellbogen)
+            self.shoulder[side] = calculate_angle(pose.huefte(side), schulter, ellbogen)
             angle = calculate_angle(pose.xy(HANDGELENK[side]), ellbogen, schulter)
             self.recent[side] = (self.recent[side] + [angle])[-self.median_frames:]
             self.elbow[side] = sorted(self.recent[side])[len(self.recent[side]) // 2]

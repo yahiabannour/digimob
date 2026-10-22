@@ -13,19 +13,19 @@
 ******************************************************************************
 """
 from calculate_angle_distance import calculate_angle, calculate_distance, calculate_progress
-from pose import ELLBOGEN, HANDGELENK, HUEFTE, SCHULTER
+from pose import ARME, ELLBOGEN, HANDGELENK, SCHULTER
 from uebung import UEBER_ZIEL, Uebung
 
 
 class Butterfly(Uebung):
     title = "Butterfly"
-    name = "Butterfly"
     demo = "demos/butterfly.mp4"
     # "Batterflei": so spricht die deutsche Stimme das Wort richtig aus
     intro = ("Sie fangen jetzt mit der Übung Batterflei an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")
     sides = ("both",)           # beide Arme zusammen, ein Zähler
     bar_style = "single"        # und ein Balken
+    landmarks = ARME
     target_message = "Versuchen Sie {} mal zu schaffen!"
     min_shoulder = 70           # Oberarm so weit gehoben zählt als Butterfly-Haltung
     # Handgelenkabstand als Vielfaches der Schulterbreite
@@ -39,7 +39,7 @@ class Butterfly(Uebung):
     einfach = {"max_distance": 1.5}
 
     def measure(self, pose):
-        shoulder = {side: calculate_angle(pose.xy(HUEFTE[side]), pose.xy(SCHULTER[side]),
+        shoulder = {side: calculate_angle(pose.huefte(side), pose.xy(SCHULTER[side]),
                                           pose.xy(ELLBOGEN[side]))
                     for side in ("left", "right")}
         # Butterfly-Haltung je Arm: Hand über dem Ellbogen (y wächst nach unten) oder Oberarm gehoben
@@ -49,7 +49,7 @@ class Butterfly(Uebung):
         self.shoulders_distance = calculate_distance(pose.xy(SCHULTER["right"]), pose.xy(SCHULTER["left"]))
         self.wrists_distance = calculate_distance(pose.xy(HANDGELENK["right"]), pose.xy(HANDGELENK["left"]))
 
-    # Die Haltung ist bewusst kein ready()-Gate: Meldung und Ansagen (z.B. "Super, versuchen Sie ...")
+    # Die Haltung ist bewusst kein ready()-Gate: Meldung und Ansagen (z.B. "Okay, versuchen Sie ...")
     # laufen ab der ersten erkannten Pose, gezählt und im Balken angezeigt wird nur in Haltung.
     def in_position(self):
         return all(self.arm_up.values())

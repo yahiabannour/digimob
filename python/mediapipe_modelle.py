@@ -19,13 +19,14 @@
 """
 import os
 import time
+import types
 
 import numpy as np
 import mediapipe as mp
 
 # Pose, Normierung und Landmark-Nummern liegen in pose.py (ohne MediaPipe); hier weiterhin
 # importierbar, damit bestehende Aufrufer (Tools) unveraendert funktionieren
-from pose import ELLBOGEN, HANDGELENK, HUEFTE, SCHULTER, Pose, normalize_pose_landmarks  # noqa: F401
+from pose import ELLBOGEN, HANDGELENK, SCHULTER, Pose, normalize_pose_landmarks  # noqa: F401
 
 vision = mp.tasks.vision
 
@@ -92,8 +93,16 @@ def _check_model(path):
     return path
 
 
-def draw_pose(image, landmarks):
-    """Zeichnet die Keypoints (Pose.landmarks) mit ihren Verbindungen in das Bild (BGR)."""
+# Statt eines Landmarks, das nicht gezeigt wird: draw_landmarks() ueberspringt unsichtbare Punkte
+# und jede Verbindung, die an einem haengt
+_VERSTECKT = types.SimpleNamespace(x=0.0, y=0.0, z=0.0, visibility=0.0, presence=0.0)
+
+
+def draw_pose(image, landmarks, shown=None):
+    """Zeichnet die Keypoints (Pose.landmarks) mit ihren Verbindungen in das Bild (BGR). shown: nur
+    diese Landmark-Nummern (Uebung.landmarks) und die Verbindungen zwischen ihnen, None: alle."""
+    if shown is not None:
+        landmarks = [lm if i in shown else _VERSTECKT for i, lm in enumerate(landmarks)]
     vision.drawing_utils.draw_landmarks(
         image=image,
         landmark_list=landmarks,

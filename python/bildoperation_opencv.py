@@ -152,14 +152,13 @@ class Bildoperationen:
         return cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
     def overlay(self, image_zoomed, pose, uebung):
-        """Keypoints (falls an), dann gespiegelt mit Name und Meldung. Die Wiederholungen je Seite
-        zeigen die Balken der Oberflaeche (uebung.progress())."""
+        """Keypoints der Uebung (falls an), dann gespiegelt mit der Meldung. Den Namen zeigt die
+        Kopfleiste, die Wiederholungen je Seite die Balken der Oberflaeche (uebung.progress())."""
         if self.show_keypoints and pose is not None:
-            draw_pose(image_zoomed, pose.landmarks)
+            draw_pose(image_zoomed, pose.landmarks, uebung.landmarks)
 
         image_zoomed = cv2.flip(image_zoomed, 1)
 
-        cv2.putText(image_zoomed, uebung.name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 3, cv2.LINE_AA)
-        cv2.putText(image_zoomed, uebung.message, (10, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(image_zoomed, uebung.message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
         return image_zoomed

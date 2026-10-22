@@ -18,6 +18,7 @@
 ******************************************************************************
 """
 import logging
+import math
 import subprocess
 import sys
 import tkinter as tk
@@ -131,20 +132,23 @@ class SportApp:
 
     # Neue Seite: Kopfleiste mit dem Titel, darunter der Inhalt mit festem Raster. Zurück kommt
     # der Inhalt (darin wird mit grid gebaut); show_frame() hebt die ganze Seite (frame.page).
-    # top: Höhe der ersten Rasterzeile, 0 auf der Übungsseite (Video + Balken brauchen die Höhe)
-    def new_page(self, title, rows=14, top=50):
+    # frame.header und frame.title: Kopfleiste und Titel, die Übungsseite setzt den Titel je Übung
+    # und legt ihre Knöpfe in die Kopfleiste (subtitle=False: ohne "DigiMob · Reha-Übungen")
+    def new_page(self, title, rows=14, top=50, subtitle=True):
         logging.debug(f"Lade GUI-Seite: {title}")
         page = tk.Frame(self.window, bg=HINTERGRUND)
         page.grid(row=0, column=0, sticky="nsew")
         header = tk.Frame(page, bg=KOPF)
         header.pack(fill="x")
-        tk.Label(header, text=title, font=("Arial", 26, "bold"), bg=KOPF, fg="white",
-                 padx=24, pady=6).pack(side="left")
-        tk.Label(header, text="DigiMob · Reha-Übungen", font=("Arial", 16), bg=KOPF, fg="#c9d9ea",
-                 padx=24).pack(side="right")
+        title_label = tk.Label(header, text=title, font=("Arial", 26, "bold"), bg=KOPF, fg="white",
+                               padx=24, pady=6)
+        title_label.pack(side="left")
+        if subtitle:
+            tk.Label(header, text="DigiMob · Reha-Übungen", font=("Arial", 16), bg=KOPF, fg="#c9d9ea",
+                     padx=24).pack(side="right")
         frame = tk.Frame(page, bg=HINTERGRUND)
         frame.pack(fill="both", expand=True)
-        frame.page = page
+        frame.page, frame.header, frame.title = page, header, title_label
         for i in range(rows):
             frame.columnconfigure(i, minsize=200)
             frame.rowconfigure(i, minsize=50)
@@ -152,10 +156,13 @@ class SportApp:
             frame.rowconfigure(0, minsize=top)
         return frame
 
-    # Ein Knopf im Stil der App; kind: Schlüssel von KNOPF
-    def button(self, parent, text, command, kind="sekundaer", **grid):
-        button = tk.Button(parent, text=text, command=command, font=self.font, height=2, width=20,
-                           relief="flat", bd=0, cursor="hand2", highlightbackground=HINTERGRUND, **FOKUS)
+    # Ein Knopf im Stil der App; kind: Schlüssel von KNOPF. compact: einzeilig und schmaler, für
+    # die Kopfleiste der Übungsseite. Feste Breite in Zeichen ("Keypoints aus"): beim Umschalten
+    # der Beschriftung bleibt jeder Knopf, wo er ist
+    def button(self, parent, text, command, kind="sekundaer", compact=False, **grid):
+        size = {"font": ("Arial", 18), "height": 1, "width": 13} if compact else {"font": self.font, "height": 2, "width": 20}
+        button = tk.Button(parent, text=text, command=command, **size, relief="flat", bd=0, cursor="hand2",
+                           highlightbackground=KOPF if compact else HINTERGRUND, **FOKUS)
         self.style_button(button, kind)
         if grid:
             button.grid(**grid)
@@ -317,43 +324,50 @@ class SportApp:
         for refresh in self.schwellen_refresh[name]:
             refresh()
 
+    # Die Übungsseite: links in der Kopfleiste Übung und Stand ("Abduktion Schulter · Übung 2 von 8",
+    # show_video), rechts die Knöpfe. Darunter Video und Balken an festen Plätzen, für jede Übung
+    # gleich: links und rechts je ein senkrechter Balken ("split"), unter dem Video ein waagerechter
+    # ("center" Kopfdrehung, "single" Butterfly/Rotation). Plätze, die eine Übung nicht braucht,
+    # bleiben leer, das Video rückt nicht.
     def configure_exercise_frame(self):
-        self.exercise_frame = frame = self.new_page("Reha-Übungen", rows=12, top=0)
+        self.exercise_frame = frame = self.new_page("", rows=0, subtitle=False)
+        self.exercise_title = frame.title
+        # pack(side="right") legt von rechts nach links: Stop ganz rechts
+        self.button_stop = self.button(frame.header, "Stop", self.back_to_menu, "gefahr", compact=True)
+        self.button_stop.pack(side="right", padx=(6, 24), pady=6)
+        self.zoom_button = self.button(frame.header, "Zoom aus", self.toggle_zoom, compact=True)
+        self.zoom_button.pack(side="right", padx=6, pady=6)
+        self.button_visualize = self.button(frame.header, "Keypoints aus", self.toggle_visualize, compact=True)
+        self.button_visualize.pack(side="right", padx=6, pady=6)
+        self.button_pause = self.button(frame.header, "Pause", self.toggle_pause, compact=True)
+        self.button_pause.pack(side="right", padx=6, pady=6)
 
-        self.button_pause = self.button(frame, "Pause", self.toggle_pause, row=1, column=0, sticky="n", pady=5, padx=5)
-        self.button_visualize = self.button(frame, "Keypoints aus", self.toggle_visualize, row=1, column=0, sticky="n", pady=100, padx=5)
-        self.zoom_button = self.button(frame, "Zoom aus", self.toggle_zoom, row=1, column=0, sticky="n", pady=200, padx=5)
-        self.button(frame, "Stop", self.back_to_menu, "gefahr", row=1, column=0, sticky="s", padx=5)
-
-        # Videobild mit den Balken daneben/darunter, je nach bar_style der Übung:
-        # "split" links + rechts, "center" darunter, "single" rechts (wie bisher)
+        # Oben mittig: Video und Balken; place statt grid, damit die Plätze nicht von der Seite abhängen
         self.video_frame = video = tk.Frame(frame, bg=HINTERGRUND)
-        video.grid(row=1, column=1, columnspan=2, sticky="nw")
+        video.place(relx=0.5, y=1, anchor="n")
         self.video_label = tk.Label(video, bg=HINTERGRUND, bd=0)
         self.video_label.grid(row=0, column=1)
         self.video_photo = None     # das eine PhotoImage, das show_video() füllt
 
         # Senkrechte Balken: Fortschritt der aktuellen Wiederholung, darüber groß die Zahl ("noch 3").
-        # "split" links/rechts aus Sicht des Patienten (die Anzeige ist gespiegelt, seine linke Seite
-        # ist links im Bild), schmaler als "single", damit beide neben Knöpfe und Video auf 1920 px passen
+        # Links/rechts aus Sicht des Patienten (die Anzeige ist gespiegelt, seine linke Seite ist links im Bild)
         self.y, self.width, self.height = 120, 100, 740     # Balken unter der Zahl, Größe
-        self.bar_single = Canvas(video, width=200, height=900, bg="white")
-        self.bar_single.grid(row=0, column=3, padx=25, sticky="nsew")
         self.bar_left = Canvas(video, width=130, height=900, bg="white")
         self.bar_left.grid(row=0, column=0, padx=10, sticky="nsew")
         self.bar_right = Canvas(video, width=130, height=900, bg="white")
         self.bar_right.grid(row=0, column=2, padx=10, sticky="nsew")
 
-        # Waagerechter Balken unter dem Video, wächst aus der Mitte nach links/rechts (Kopfdrehung).
-        # Flach, damit Video + Balken + Titel in die Fensterhöhe passen und "Stop" sichtbar bleibt
-        self.hx, self.hy, self.hwidth, self.hheight = 0, 4, 1200, 26     # Balkenposition und Größe
-        self.bar_center = Canvas(video, width=1200, height=34, bg="white", highlightthickness=0)
+        # Waagerechter Balken unter dem Video, wächst aus der Mitte nach links/rechts (Kopfdrehung)
+        # oder nach beiden Seiten (Butterfly, Rotation). Flach, damit Kopfleiste + Video + Balken in
+        # die Fensterhöhe (1002 px) passen
+        self.hx, self.hy, self.hwidth, self.hheight = 0, 4, 1200, 32     # Balkenposition und Größe
+        self.bar_center = Canvas(video, width=1200, height=40, bg="white", highlightthickness=0)
         self.bar_center.grid(row=1, column=1, pady=(3, 0))
 
         self.bar_style = None
         self.bar_state = {}     # je Balken ein balken.BalkenZustand (bar_feedback)
         self.bar_drawn = {}     # je Balken: was zuletzt gezeichnet wurde, gleich -> nicht neu zeichnen
-        self.update_bar(None, "single")
+        self.update_bar(None, "split")
 
     # Zeigt das angegebene Frame an
     def show_frame(self, frame):
@@ -415,21 +429,26 @@ class SportApp:
                 self.video_photo = ImageTk.PhotoImage("RGB", self.VIDEO_SIZE)
                 self.video_label.configure(image=self.video_photo)
             self.video_photo.paste(Image.fromarray(image))
+        self.update_title()
         self.update_bar(balken, bar_style)
+
+    # Kopfleiste der Übungsseite: welche Übung läuft und die wievielte
+    def update_title(self):
+        lauf = self.lauf
+        uebung = getattr(lauf, "uebung", None)
+        text = f"{uebung.title}  ·  Übung {lauf.index + 1} von {lauf.count}" if uebung else ""
+        if self.exercise_title.cget("text") != text:
+            self.exercise_title.config(text=text)
 
     # Balken je Seite (uebung.Balken: Füllstand, zurück?, Zahl), None = alles leer (Einführung,
     # "Prima", Stop). bar_style der Übung: "split", "center" oder "single" (siehe uebung.py)
     def update_bar(self, balken, bar_style=None):
         if bar_style and bar_style != self.bar_style:
             self.bar_style = bar_style
-            self.bar_drawn.clear()      # andere Balken sichtbar: neu zeichnen
-            self.bar_left.grid() if bar_style == "split" else self.bar_left.grid_remove()
-            self.bar_right.grid() if bar_style == "split" else self.bar_right.grid_remove()
-            self.bar_center.grid() if bar_style == "center" else self.bar_center.grid_remove()
-            self.bar_single.grid() if bar_style == "single" else self.bar_single.grid_remove()
-            # "center" hat keine Balken neben dem Video: rechts bliebe ~320 px leer, also das Video
-            # um die Hälfte davon nach rechts rücken, damit es mittig zwischen Knöpfen und Rand steht
-            self.video_frame.grid_configure(padx=(self.CENTER_SHIFT if bar_style == "center" else 0, 0))
+            self.bar_drawn.clear()      # andere Balken: neu zeichnen
+            # Die Plätze bleiben stehen, nicht gebrauchte werden nur geleert
+            for canvas in (self.bar_left, self.bar_right, self.bar_center):
+                canvas.delete("bar")
 
         if balken is None:
             self.bar_state.clear()      # nächste Übung: keine Bestätigung für den neuen Zielwert
@@ -440,7 +459,7 @@ class SportApp:
         elif self.bar_style == "center":
             self.draw_horizontal(values.get("left"), values.get("right"))
         else:
-            self.draw_vertical(self.bar_single, "single", next(iter(values.values()), None))
+            self.draw_spread(next(iter(values.values()), None))
 
     # Farbverlauf passend zum Füllstand: Gelb (255, 255, 0) -> Grün (0, 128, 0), ab dem Ziel Grün
     @staticmethod
@@ -452,7 +471,6 @@ class SportApp:
 
     # Was der Balken außer dem Füllstand zeigt (Bestätigung, kurz Stehenlassen, höchster Punkt):
     # balken.BalkenZustand, einer je Balken
-    CENTER_SHIFT = 160      # px, Video nach rechts bei bar_style "center" (Halswirbelsäule)
     def bar_feedback(self, key, b):
         return self.bar_state.setdefault(key, BalkenZustand()).update(b)
 
@@ -493,7 +511,7 @@ class SportApp:
         if flash:
             self.draw_check(canvas, cx, (top + bottom) / 2, w * 0.8)
         elif zurueck:
-            self.draw_arrow_down(canvas, cx, (y + bottom) / 2, w * 0.8)
+            self.draw_arrow(canvas, cx, (y + bottom) / 2, w * 0.8)
         if b is not None:
             canvas.create_text(cw / 2, 24, text=b.wort, font=("Arial", 18), tags="bar")
             canvas.create_text(cw / 2, 78, text=str(b.zahl), font=("Arial", 56, "bold"), tags="bar")
@@ -505,28 +523,46 @@ class SportApp:
         for color, width in (("white", max(8, size / 4)), ("#006400", max(4, size / 7))):  # weißer Rand: auf Grün sichtbar
             canvas.create_line(*points, width=width, fill=color, capstyle="round", joinstyle="round", tags="bar")
 
+    # Pfeil nach unten, um drehung Grad im Uhrzeigersinn um (cx, cy) gedreht (90 = nach links)
     @staticmethod
-    def draw_arrow_down(canvas, cx, cy, size):
+    def draw_arrow(canvas, cx, cy, size, drehung=0):
         s, shaft = size / 2, size / 6
-        canvas.create_polygon(cx - shaft, cy - s * 1.6, cx + shaft, cy - s * 1.6, cx + shaft, cy, cx + s, cy,
-                              cx, cy + s * 1.1, cx - s, cy, cx - shaft, cy, fill="#202020", outline="white",
-                              width=3, tags="bar")
+        top = cy - s * 1.35         # Schaft und Spitze um (cx, cy) herum: dreht sich auf der Stelle
+        points = [(cx - shaft, top), (cx + shaft, top), (cx + shaft, top + s * 1.6), (cx + s, top + s * 1.6),
+                  (cx, top + s * 2.7), (cx - s, top + s * 1.6), (cx - shaft, top + s * 1.6)]
+        a = math.radians(drehung)
+        turned = [(cx + (x - cx) * math.cos(a) - (y - cy) * math.sin(a),
+                   cy + (x - cx) * math.sin(a) + (y - cy) * math.cos(a)) for x, y in points]
+        canvas.create_polygon(*(c for p in turned for c in p), fill="#202020", outline="white", width=3, tags="bar")
 
     # Waagerechter Balken (Kopfdrehung): linke Seite füllt von der Mitte nach links, rechte nach
     # rechts, je eine Ziellinie; an den Enden die Zahl je Seite
     def draw_horizontal(self, left, right):
-        c = self.bar_center
-        middle, half, top, bottom = self.hx + self.hwidth // 2, self.hwidth // 2, self.hy, self.hy + self.hheight
         sides = [(b, direction, *self.bar_feedback(key, b)) for b, direction, key in
                  ((left, -1, "center_left"), (right, 1, "center_right"))]
-        drawn = tuple((None if fill is None else round(half * min(fill, UEBER_ZIEL)), flash,
-                       None if peak is None else round(half * min(peak, UEBER_ZIEL)), b and (b.zahl, b.wort))
-                      for b, _, fill, _, flash, peak in sides)
+        self.draw_halves(sides, [(b, direction) for b, direction, *_ in sides])
+
+    # Ein Balken unter dem Video (Butterfly, Rotation): wächst aus der Mitte nach beiden Seiten, wie
+    # die Arme beim Öffnen. Ziel erreicht: die Pfeile zeigen zur Mitte, die Hände wieder zusammen.
+    # Die Zahl steht links im Balken (für eine Zeile darüber reicht die Fensterhöhe nicht)
+    def draw_spread(self, b):
+        feedback = self.bar_feedback("single", b)
+        self.draw_halves([(b, -1, *feedback), (b, 1, *feedback)], [(b, -1)])
+
+    # Beide Hälften des waagerechten Balkens; sides: je (Balken, Richtung -1/1, fill, zurück, flash,
+    # peak), labels: (Balken, Richtung) für die Zahl am linken (-1) bzw. rechten Ende
+    def draw_halves(self, sides, labels):
+        c = self.bar_center
+        middle, half, top, bottom = self.hx + self.hwidth // 2, self.hwidth // 2, self.hy, self.hy + self.hheight
+        drawn = (tuple((None if fill is None else round(half * min(fill, UEBER_ZIEL)), zurueck, flash,
+                        None if peak is None else round(half * min(peak, UEBER_ZIEL)))
+                       for _, _, fill, zurueck, flash, peak in sides),
+                 tuple(b and (b.zahl, b.wort) for b, _ in labels))
         if self.bar_drawn.get("center") == drawn:
             return
         self.bar_drawn["center"] = drawn
         c.delete("bar")
-        for b, direction, fill, _, flash, peak in sides:
+        for b, direction, fill, zurueck, flash, peak in sides:
             at = lambda f, direction=direction: middle + direction * int(half * min(f, UEBER_ZIEL) / UEBER_ZIEL)
             if flash:
                 c.create_rectangle(min(middle, at(UEBER_ZIEL)), top, max(middle, at(UEBER_ZIEL)), bottom,
@@ -537,11 +573,15 @@ class SportApp:
             if peak is not None:
                 c.create_line(at(peak), top, at(peak), bottom, width=5, fill="#1f3c88", tags="bar")
             c.create_line(at(1.0), 0, at(1.0), bottom + self.hy, width=4, fill="black", tags="bar")
+            if b is not None and flash:
+                self.draw_check(c, at(1.0) + direction * 30, (top + bottom) / 2, self.hheight * 0.9)
+            elif b is not None and zurueck:
+                # links nach rechts, rechts nach links: zur Mitte
+                self.draw_arrow(c, (middle + at(1.0)) / 2, (top + bottom) / 2, self.hheight * 0.7, direction * 90)
+        for b, direction in labels:
             if b is not None:
                 c.create_text(8 if direction < 0 else self.hwidth - 8, (top + bottom) / 2, text=f"{b.wort} {b.zahl}",
                               anchor="w" if direction < 0 else "e", font=("Arial", 16, "bold"), tags="bar")
-                if flash:
-                    self.draw_check(c, at(1.0) + direction * 30, (top + bottom) / 2, self.hheight * 0.9)
         c.create_rectangle(self.hx, top, self.hx + self.hwidth - 1, bottom, outline="black", tags="bar")
         c.create_line(middle, 0, middle, bottom + self.hy, width=3, tags="bar")
 

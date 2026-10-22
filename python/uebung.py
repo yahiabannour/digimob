@@ -22,7 +22,7 @@ import logging
 from collections import namedtuple
 
 from calculate_angle_distance import calculate_angle, calculate_progress
-from pose import ELLBOGEN, HUEFTE, SCHULTER
+from pose import ELLBOGEN, SCHULTER, SCHULTERN_ELLBOGEN
 
 # Presets der Schwellen: "voll" = Klassenattribute, "einfach" = gelockert fuer Patienten
 PRESETS = ("voll", "einfach")
@@ -36,15 +36,17 @@ UEBER_ZIEL = 1.25       # der Balken reicht ein Viertel ueber das Ziel: die Ziel
 
 
 class Uebung:
-    title = ""                  # im Menue, z.B. "Abduktion Schulter"
-    name = ""                   # im Videobild; ohne Umlaute, cv2.putText() kann keine zeichnen
+    title = ""                  # im Menue und in der Kopfleiste der Uebungsseite, z.B. "Abduktion Schulter"
     demo = ""                   # 3D-Demo (Video), die Einfuehrung zeigt sie statt eines Bildes
     intro = ""                  # Ansage waehrend der Einfuehrung
     sides = ("left", "right")   # Butterfly und Rotation zaehlen nur eine Bewegung: ("both",)
-    target_message = "Super, versuchen Sie {} mal zu schaffen!"
-    # Balken: "split" = ein senkrechter Balken je Seite, "center" = ein waagerechter Balken, der
-    # aus der Mitte nach links/rechts waechst (Kopfdrehung), "single" = ein Balken (sides ("both",))
+    target_message = "Okay, versuchen Sie {} mal zu schaffen!"
+    # Balken: "split" = ein senkrechter Balken je Seite neben dem Video, "center" = ein waagerechter
+    # Balken unter dem Video, der aus der Mitte nach links/rechts waechst (Kopfdrehung), "single" = ein
+    # Balken (sides ("both",)) unter dem Video, der aus der Mitte nach beiden Seiten waechst (Arme oeffnen)
     bar_style = "split"
+    # Die Landmarks, aus denen die Uebung rechnet: nur diese zeigt die Keypoints-Anzeige (None: alle)
+    landmarks = None
     # Einstellbare Schwellen (Attribut -> Beschriftung im Auswahlmenue) und die Abweichungen des
     # Presets "Einfach" von "Voll" (= den Klassenattributen)
     schwellen = {}
@@ -180,9 +182,10 @@ def einheit(key):
 
 
 class Armheben(Uebung):
-    """Abduktion, Seitheben, Flexion und Mobilisation Schulter: Winkel Huefte-Schulter-Ellbogen je
+    """Abduktion, Seitheben, Flexion und Mobilisation Schulter: Winkel virtuelle Huefte-Schulter-Ellbogen je
     Arm. Eine Wiederholung ist unten -> ueber max_angle (oben) -> wieder unter min_angle (unten).
     Die Uebungen unterscheiden sich nur in Texten und Zielhoehe (max_angle)."""
+    landmarks = SCHULTERN_ELLBOGEN
     max_angle = 150     # Zielhoehe: Arm oben, je Uebung (Schieberegler)
     # Unten = rueckweg Grad unter der Zielhoehe, kein eigener Regler: Schwerkraft und Bett bringen
     # den Arm ohnehin zurueck, wie weit, haengt aber vom Koerper ab (Ruhewinkel 11-21 Grad in den
@@ -194,7 +197,7 @@ class Armheben(Uebung):
     # Ab 40: unten (Zielhoehe - rueckweg) bleibt ueber dem Balkenanfang; bis 175: erreichbar (2D max. 180)
     bereich = {"max_angle": (40, 175)}
 
-    # Eine Seite, deren schwaechster Punkt (Huefte, Schulter, Ellbogen) unsicherer ist, zaehlt in
+    # Eine Seite, deren schwaechster Punkt (Schulter, Ellbogen) unsicherer ist, zaehlt in
     # diesem Frame nicht: ein verdeckter Ellbogen (z.B. auf der Bettdecke) springt von Frame zu
     # Frame, und der Winkel mit ihm (seitenheben/rec8: 14 statt 5). Knapp: ein ruhender Ellbogen
     # hat oft nur 0.6-0.8.
@@ -214,8 +217,10 @@ class Armheben(Uebung):
     def measure(self, pose):
         self.angle, self.visible = {}, {}
         for side in self.sides:
-            points = (HUEFTE[side], SCHULTER[side], ELLBOGEN[side])
-            angle = calculate_angle(*(pose.xy(i) for i in points))
+            # Winkel virtuelle Huefte-Schulter-Ellbogen; die Sichtbarkeit der echten Huefte zaehlt
+            # nicht: sie liegt beim Sitzen nah vor dem Tablet unter dem Bildrand (pose.Pose.huefte)
+            points = (SCHULTER[side], ELLBOGEN[side])
+            angle = calculate_angle(pose.huefte(side), *(pose.xy(i) for i in points))
             self.visible[side] = min(visibility(pose.landmarks[i]) for i in points) >= self.min_visibility
             if self.visible[side]:
                 self.recent[side] = (self.recent[side] + [angle])[-self.median_frames:]

@@ -32,34 +32,46 @@ from bizepscurls import Bizepscurls
 from calculate_angle_distance import calculate_angle, calculate_progress
 from camera.file_camera import FileCamera
 from halswirbelsaeule import Halswirbelsaeule
-from pose import ELLBOGEN, HANDGELENK, HUEFTE, SCHULTER, Pose
+from pose import ANDERE, ELLBOGEN, HANDGELENK, HUEFTE_INNEN, HUEFTE_UNTEN, SCHULTER, Pose
 import schwellen
 from uebung import PRESETS, Balken, Haltezeit, Uebung
 from uebungslauf import Uebungslauf
 
 Landmark = namedtuple("Landmark", "x y z visibility presence")
+ECHTE_HUEFTE = {"left": 23, "right": 24}     # MediaPipe; die Uebungen nutzen sie nicht (Pose.huefte)
 
 
-def pose(arm=(20, 20), elbow=(180, 180), visibility=1.0):
-    """Kuenstliche Pose: Oberkoerper senkrecht, je Arm der Winkel Huefte-Schulter-Ellbogen (arm)
-    und Handgelenk-Ellbogen-Schulter (elbow) in Grad, Reihenfolge (links, rechts)."""
+def pose(arm=(20, 20), elbow=(180, 180), visibility=1.0, huefte_im_bild=True):
+    """Kuenstliche Pose: Oberkoerper senkrecht, je Arm der Winkel virtuelle Huefte-Schulter-Ellbogen
+    (arm) und Handgelenk-Ellbogen-Schulter (elbow) in Grad, Reihenfolge (links, rechts).
+    huefte_im_bild=False: die echte Huefte liegt unter dem Bildrand und ist unsichtbar (Tablet)."""
     points = [(0.5, 0.5)] * 33
     points = list(points)
+    vis = [visibility] * 33
+    shoulders = {"left": (0.4, 0.4), "right": (0.6, 0.4)}
     for k, side in enumerate(("left", "right")):
-        sx = 0.4 if side == "left" else 0.6
+        shoulder, other = shoulders[side], shoulders[ANDERE[side]]
         sign = -1 if side == "left" else 1      # Arme gehen nach aussen
-        shoulder, hip = (sx, 0.4), (sx, 0.8)
-        a = math.radians(arm[k])
-        upper = (sign * math.sin(a), math.cos(a))           # Richtung Schulter -> Ellbogen (y nach unten)
+        # Richtung Schulter -> virtuelle Huefte (Pose.huefte), um arm Grad nach aussen gedreht
+        breite = math.dist(shoulder, other)
+        h = (HUEFTE_INNEN * (other[0] - shoulder[0]), HUEFTE_UNTEN * breite)
+        h = (h[0] / math.hypot(*h), h[1] / math.hypot(*h))
+        a = math.radians(-sign * arm[k])
+        upper = (h[0] * math.cos(a) - h[1] * math.sin(a),   # Richtung Schulter -> Ellbogen (y nach unten)
+                 h[0] * math.sin(a) + h[1] * math.cos(a))
         el = (shoulder[0] + 0.2 * upper[0], shoulder[1] + 0.2 * upper[1])
         # Unterarm: um (180 - elbow) Grad gegen den Oberarm gedreht
         b = math.radians(180 - elbow[k])
         fx = upper[0] * math.cos(b) - upper[1] * math.sin(b)
         fy = upper[0] * math.sin(b) + upper[1] * math.cos(b)
         wr = (el[0] + 0.2 * fx, el[1] + 0.2 * fy)
-        points[HUEFTE[side]], points[SCHULTER[side]] = hip, shoulder
+        points[SCHULTER[side]] = shoulder
         points[ELLBOGEN[side]], points[HANDGELENK[side]] = el, wr
-    return Pose([Landmark(x, y, 0.0, visibility, 1.0) for x, y in points], (640, 480))
+        # Die echte Huefte: im Bild unter der Schulter, sonst wie am Tablet (y 1.4, Sichtbarkeit 0)
+        points[ECHTE_HUEFTE[side]] = (shoulder[0], 0.8) if huefte_im_bild else (shoulder[0], 1.4)
+        if not huefte_im_bild:
+            vis[ECHTE_HUEFTE[side]] = 0.0
+    return Pose([Landmark(x, y, 0.0, v, 1.0) for (x, y), v in zip(points, vis)], (640, 480))
 
 
 def run(uebung, frames, fps=30, t0=0.0):
@@ -201,6 +213,57 @@ def test_armheben_balken():
     u = run(Abduktion(target=5), [pose((20, 20))] * 6 + [pose((160, 160))] * 6)
     b = u.progress()["left"]
     assert b.fill > 1.0 and b.zurueck and b.zahl == 5 and b.wort == "noch"
+
+
+# --- Virtuelle Huefte ---------------------------------------------------------------------------
+
+def test_virtuelle_huefte_unter_und_innen_neben_der_schulter():
+    p = pose()
+    links, rechts = p.xy(SCHULTER["left"]), p.xy(SCHULTER["right"])
+    breite = math.dist(links, rechts)
+    huefte = p.huefte("left")
+    assert huefte[1] - links[1] == pytest.approx(HUEFTE_UNTEN * breite)
+    assert huefte[0] - links[0] == pytest.approx(HUEFTE_INNEN * (rechts[0] - links[0]))    # zur Mitte
+    assert p.huefte("right")[0] - rechts[0] == pytest.approx(HUEFTE_INNEN * (links[0] - rechts[0]))
+
+
+def test_huefte_ausserhalb_des_bildes_zaehlt_trotzdem():
+    # Am Tablet nah vor der Kamera: die Huefte unter dem Bildrand, Sichtbarkeit 0 (2026-10-18)
+    unten, oben = pose((20, 20), huefte_im_bild=False), pose((160, 160), huefte_im_bild=False)
+    u = run(Abduktion(target=None), [unten] * 6 + [oben] * 6 + [unten] * 6)
+    assert u.counter == {"left": 1, "right": 1}
+    gestreckt = pose(elbow=(180, 180), huefte_im_bild=False)
+    gebeugt = pose(elbow=(60, 60), huefte_im_bild=False)
+    b = run(Bizepscurls(target=None), [gestreckt] * 10 + [gebeugt] * 10 + [gestreckt] * 10)
+    assert b.counter == {"left": 1, "right": 1}
+
+
+def test_keypoints_je_uebung_nie_die_huefte():
+    from uebungen import UEBUNGEN
+    schultern_ellbogen, arme = {11, 12, 13, 14}, {11, 12, 13, 14, 15, 16}
+    erwartet = {"Abduktion Schulter": schultern_ellbogen, "Seitheben": schultern_ellbogen,
+                "Flexion Schulter": schultern_ellbogen, "Mobilisation Schulter": schultern_ellbogen,
+                "Bizepscurls": arme, "Butterfly": arme, "Rotation im Sitzen": arme,
+                "Halswirbelsäule": set(range(7))}
+    assert {cls.title: set(cls.landmarks) for cls in UEBUNGEN.values()} == erwartet
+
+
+def test_keypoints_zeigen_nur_die_punkte_der_uebung():
+    from mediapipe_modelle import draw_pose
+    p = pose((90, 90))
+    bild = np.zeros((480, 640, 3), np.uint8)
+    draw_pose(bild, p.landmarks, {11, 13})
+    gezeichnet = lambda i: bild[int(p.landmarks[i].y * 480), int(p.landmarks[i].x * 640)].any()
+    assert gezeichnet(11) and gezeichnet(13)
+    assert not gezeichnet(12) and not gezeichnet(15)    # andere Schulter, Handgelenk
+
+
+def test_schultern_aufeinander_macht_frame_ungueltig():
+    # Ohne Schulterbreite liegt die virtuelle Huefte auf der Schulter: kein Winkel
+    p = Pose([Landmark(0.5, 0.5, 0.0, 1.0, 1.0)] * 33, (640, 480))
+    u = Abduktion(target=None)
+    u.update(p, 0.0)
+    assert p.huefte("left") == tuple(p.xy(SCHULTER["left"])) and not u.valid
 
 
 def test_ziel_erreicht_beendet_uebung():
@@ -438,6 +501,15 @@ def test_pose_thread_gibt_nach_fehlern_auf():
     lauf.worker.thread.join(timeout=uebungslauf.POSE_FEHLER * 0.01 + 3)  # FakeCam: 10 ms je Bild
     with pytest.raises(RuntimeError, match="Pose-Erkennung ausgefallen"):
         lauf.tick()                     # Hauptprogramm.loop() beendet die Uebung dann mit einer Meldung
+    lauf.stop()
+
+
+def test_schleife_zaehlt_die_uebungen_fuer_die_kopfleiste():
+    lauf = Uebungslauf(FakePose(), FakeBild(), FakeSprecher(), lambda *a: None)
+    lauf.start(None, [Abduktion(target=1), Bizepscurls(target=1)], on_source_end=lambda u: None, intro=False)
+    assert (lauf.index, lauf.count, lauf.uebung.title) == (0, 2, "Abduktion Schulter")
+    lauf.next()
+    assert (lauf.index, lauf.count, lauf.uebung.title) == (1, 2, "Bizepscurls")
     lauf.stop()
 
 

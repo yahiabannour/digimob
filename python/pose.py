@@ -13,13 +13,27 @@
             Uebungen sind auf genau diese Normierung eingestellt.
 ******************************************************************************
 """
+from calculate_angle_distance import calculate_distance
 
 
-# Landmark-Nummern je Seite, aus Sicht des Patienten (das Kamerabild ist ungespiegelt)
+# Landmark-Nummern je Seite, aus Sicht des Patienten (das Kamerabild ist ungespiegelt). Die Huefte
+# (23/24) nutzt keine Uebung: sie liegt am Tablet oft unter dem Bildrand, siehe Pose.huefte()
 SCHULTER   = {"left": 11, "right": 12}
 ELLBOGEN   = {"left": 13, "right": 14}
 HANDGELENK = {"left": 15, "right": 16}
-HUEFTE     = {"left": 23, "right": 24}
+ANDERE     = {"left": "right", "right": "left"}
+
+# Was die Keypoints-Anzeige je Uebung zeigt (Uebung.landmarks): die Punkte, aus denen sie rechnet
+GESICHT = frozenset(range(7))          # Nase und Augen, Halswirbelsaeule.head_rotation()
+SCHULTERN_ELLBOGEN = frozenset([*SCHULTER.values(), *ELLBOGEN.values()])
+ARME = SCHULTERN_ELLBOGEN | frozenset(HANDGELENK.values())
+
+# Die virtuelle Huefte, in Schulterbreiten: so weit unter und innen neben der Schulter lag die echte
+# Huefte in den 76 Aufnahmen (Median 1.5-2.1 unten, 0.13-0.16 innen). Fuer den Winkel zaehlt nur
+# die Richtung, also das Verhaeltnis der beiden. Senkrecht darunter (innen 0) waere jeder
+# Schulterwinkel 4-5 Grad kleiner, abduktion/rec1 (oben 148 Grad, Ziel 150) zaehlte links 1 statt 3
+HUEFTE_UNTEN = 1.5
+HUEFTE_INNEN = 0.14
 
 
 class Pose:
@@ -33,6 +47,15 @@ class Pose:
     def xy(self, index):
         """Normierter 2D-Punkt, wie ihn calculate_angle() erwartet."""
         return self.norm[index][:2]
+
+    def huefte(self, side):
+        """Virtuelle Huefte einer Seite (normiert) aus beiden Schultern: HUEFTE_UNTEN Schulterbreiten
+        darunter, HUEFTE_INNEN zur Koerpermitte. Ersetzt die erkannte Huefte, die beim Sitzen nah
+        vor dem Tablet ausserhalb des Bildes liegt (Sichtbarkeit 0). Liegen beide Schultern
+        aufeinander, ist sie die Schulter selbst: der Winkel ist nicht bestimmbar, der Frame ungueltig."""
+        schulter, andere = self.xy(SCHULTER[side]), self.xy(SCHULTER[ANDERE[side]])
+        breite = calculate_distance(schulter, andere)
+        return (schulter[0] + HUEFTE_INNEN * (andere[0] - schulter[0]), schulter[1] + HUEFTE_UNTEN * breite)
 
 
 def normalize_pose_landmarks(landmarks):

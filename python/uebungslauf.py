@@ -104,6 +104,8 @@ class Uebungslauf:
         intro=False: ohne Demo und Ansage, gezaehlt wird ab dem ersten Frame."""
         self.stop_worker()
         self.cam, self.queue, self.intro = cam, list(uebungen), intro
+        # Für die Kopfleiste "Übung index+1 von count"; next() zählt index hoch
+        self.count, self.index = len(self.queue), -1
         self.on_source_end, self.on_finished = on_source_end, on_finished
         # Live (Kamera) im Hintergrund erkennen, eine Videodatei (Aufnahmen-Test) im Takt der
         # Oberflaeche: jedes Bild, mit seiner Zeit im Video
@@ -127,6 +129,7 @@ class Uebungslauf:
                 self.on_finished()
             return
         self.uebung = self.queue.pop(0)
+        self.index += 1
         self.sprecher.reset()
         self.set_phase("intro" if self.intro else "counting")
         if self.intro:

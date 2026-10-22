@@ -17,7 +17,6 @@ from uebung import Armheben
 
 class FlexionSchulter(Armheben):
     title = "Flexion Schulter"
-    name = "Flexion Schulter"
     demo = "demos/flexion_schulter.mp4"
     intro = ("Sie fangen jetzt mit der Übung Flexion Schulter an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")

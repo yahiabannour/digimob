@@ -15,17 +15,18 @@
 """
 import numpy as np
 from calculate_angle_distance import calculate_progress
+from pose import GESICHT
 from uebung import UEBER_ZIEL, Uebung
 
 
 class Halswirbelsaeule(Uebung):
     title = "Halswirbelsäule"
-    name = "Halswirbelsaeule"
     demo = "demos/halswirbelsaeule.mp4"
     intro = ("Sie fangen jetzt mit der Übung Halswirbelsäule an. Bitte halten Sie den Kopf ruhig "
              "in der Mitte, damit die Übung starten kann.")
 
     bar_style = "center"    # ein Balken unter dem Video, waechst aus der Mitte zur Drehrichtung
+    landmarks = GESICHT
 
     # Schwellwerte der Kopfdrehung in Grad, gelten für beide Seiten
     min_angle = 15      # bis hier gilt der Kopf als mittig (Balken leer)

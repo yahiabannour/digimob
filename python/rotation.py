@@ -13,18 +13,18 @@
 ******************************************************************************
 """
 from calculate_angle_distance import calculate_angle, calculate_distance, calculate_progress
-from pose import ELLBOGEN, HANDGELENK, HUEFTE, SCHULTER
+from pose import ARME, ELLBOGEN, HANDGELENK, SCHULTER
 from uebung import UEBER_ZIEL, Uebung
 
 
 class Rotation(Uebung):
     title = "Rotation im Sitzen"
-    name = "Rotation im Sitzen"
     demo = "demos/rotation.mp4"
     intro = ("Sie fangen jetzt mit der Übung Rotation an. Bitte legen Sie die Hände runter "
              "neben den Körper, damit die Übung starten kann.")
     sides = ("both",)           # beide Arme zusammen, ein Zähler
     bar_style = "single"        # und ein Balken
+    landmarks = ARME
     target_message = "Versuchen Sie {} mal zu schaffen!"
     max_shoulder = 75           # Oberarme am Körper, sonst wird nicht gezählt
     # Handgelenkabstand als Vielfaches des Ellenbogenabstands
@@ -37,7 +37,7 @@ class Rotation(Uebung):
     einfach = {"max_distance": 1.3}
 
     def measure(self, pose):
-        self.shoulder = {side: calculate_angle(pose.xy(HUEFTE[side]), pose.xy(SCHULTER[side]),
+        self.shoulder = {side: calculate_angle(pose.huefte(side), pose.xy(SCHULTER[side]),
                                                pose.xy(ELLBOGEN[side]))
                          for side in ("left", "right")}
         self.elbows_distance = calculate_distance(pose.xy(ELLBOGEN["right"]), pose.xy(ELLBOGEN["left"]))

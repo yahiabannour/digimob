@@ -71,7 +71,7 @@ class SprachAusgabe:
         remaining = repetitions - total_repetitions
 
         if total_repetitions == 0 and "start" not in self.executed:
-            self.say(f"Super, versuchen Sie {repetitions} Wiederholungen zu schaffen")
+            self.say(f"Okay, versuchen Sie {repetitions} Wiederholungen zu schaffen")
             self.executed.add("start")
 
         elif total_repetitions >= repetitions / 2 and "halfway" not in self.executed:
