@@ -88,7 +88,7 @@ class TrainingSession(
 
     /** Einfuehrung sofort beenden: die Ansage verstummt, gezaehlt wird ab jetzt. Sonst nichts. */
     fun skipIntro() {
-        if (phase != Phase.INTRO) return
+        if (isPaused || phase != Phase.INTRO) return     // wie das Nicken: in der Pause nichts
         speaker.stop()
         setPhase(Phase.COUNTING)
         publish()

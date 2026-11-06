@@ -220,16 +220,16 @@ class TrainingSessionTest {
     }
 
     @Test
-    fun `Doppeltipp in der Pause - Einfuehrung vorbei, gezaehlt wird erst nach der Pause`() {
+    fun `Doppeltipp in der Pause tut nichts, wie das Nicken`() {
         val session = session()
+        val stopsBefore = speaker.stops
         session.setPaused(true)
         session.skipIntro()
-        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
-        session.rep()
-        assertThat(session.current!!.total).isEqualTo(0)
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+        assertThat(speaker.stops).isEqualTo(stopsBefore)
         session.setPaused(false)
-        session.rep()
-        assertThat(session.current!!.total).isEqualTo(1)
+        session.skipIntro()
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
     }
 
     @Test
