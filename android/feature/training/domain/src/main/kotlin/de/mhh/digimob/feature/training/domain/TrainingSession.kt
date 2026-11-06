@@ -40,8 +40,7 @@ data class SessionState(
  *  - [skipIntro], wenn die Demo per Doppeltipp oder Nicken uebersprungen wird (nur Android)
  * Die Einfuehrung endet, wenn die Ansage fertig ist und [INTRO_MIN_SECONDS] vergangen sind,
  * spaetestens nach [INTRO_MAX_SECONDS], oder mit einem Kopfnicken ([NodDetector], nur Android,
- * ab [NOD_GRACE_SECONDS]). Pausenzeit zaehlt nicht zur Einfuehrung und
- * zu "Prima".
+ * ab dem ersten Bild). Pausenzeit zaehlt nicht zur Einfuehrung und zu "Prima".
  */
 class TrainingSession(
     exercises: List<Exercise>,
@@ -74,10 +73,7 @@ class TrainingSession(
     fun onFrame(pose: Pose?, t: Double) {
         if (isPaused || phase == Phase.FINISHED) return
         if (phase == Phase.INTRO) {
-            // Der Detektor sieht jedes Bild (ein Nicken ueber die Grenze zaehlt), uebersprungen wird erst
-            // ab NOD_GRACE_SECONDS: ein Blick auf die Haende zu Beginn ist kein Nicken
-            val nodded = nod.update(pose, t)
-            if (nodded && clock.nowSeconds() - phaseSince >= NOD_GRACE_SECONDS) skipIntro()
+            if (nod.update(pose, t)) skipIntro()
             return
         }
         exercise.update(pose, t)
@@ -169,7 +165,6 @@ class TrainingSession(
     companion object {
         const val INTRO_MIN_SECONDS = 5.0   // Einfuehrung mindestens so lange, auch bei kurzer Ansage
         const val INTRO_MAX_SECONDS = 20.0  // laengstens so lange: ein verlorener TTS-Callback haelt sie nicht fest
-        const val NOD_GRACE_SECONDS = 2.0   // Schonzeit: so lange nach Beginn der Einfuehrung ueberspringt kein Nicken
         const val DONE_SECONDS = 5.0    // "Prima, gute Leistung!" stehen lassen, dann die naechste Uebung
     }
 }
