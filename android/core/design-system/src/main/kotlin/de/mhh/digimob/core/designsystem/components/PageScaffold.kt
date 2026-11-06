@@ -4,6 +4,7 @@ import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,8 +35,11 @@ fun PageScaffold(
     actions: @Composable RowScope.() -> Unit = { AppSubtitle() },
     content: @Composable () -> Unit
 ) {
+    // Keine Insets: die Leisten sind ausgeblendet (MainActivity). Kurz eingewischt legen sie sich ueber die
+    // Seite, statt sie zu verkleinern; sonst schrumpfte das Video und wuchs wieder (Test 2026-11-06)
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
                 title = {
@@ -48,6 +52,7 @@ fun PageScaffold(
                     )
                 },
                 actions = actions,
+                windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = DigiMobTheme.colors.header,
                     titleContentColor = DigiMobTheme.colors.onHeader
