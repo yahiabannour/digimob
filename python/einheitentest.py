@@ -455,6 +455,8 @@ class FakePose:
 
 
 class FakeSprecher:
+    speaking = False
+
     def reset(self):
         pass
 
@@ -534,21 +536,34 @@ class FakeDemo:
         pass
 
 
-def test_einfuehrung_zeigt_die_demo_mehrmals(monkeypatch):
+def test_einfuehrung_endet_mit_der_ansage_nach_der_mindestzeit(monkeypatch):
     import uebungslauf
     demo = FakeDemo()
-    monkeypatch.setattr(uebungslauf, "INTRO_SECONDS", 0)
     monkeypatch.setattr(Uebungslauf, "open_demo", staticmethod(lambda path: demo))
-    lauf = Uebungslauf(FakePose(), FakeBild(), FakeSprecher(), lambda *a: None)
+    sprecher = FakeSprecher()
+    sprecher.speaking = True
+    lauf = Uebungslauf(FakePose(), FakeBild(), sprecher, lambda *a: None)
     lauf.start(FakeCam(), [Abduktion(target=None)], on_source_end=lambda u: None)
-    for plays in range(uebungslauf.DEMO_PLAYS):
-        demo.plays = plays
-        lauf.tick()
-        assert lauf.phase == "intro"                    # die Demo ist noch nicht oft genug gelaufen
-    demo.plays = uebungslauf.DEMO_PLAYS
+    lauf.phase_since -= uebungslauf.INTRO_MIN_SECONDS - 0.5
+    lauf.tick()
+    assert lauf.phase == "intro"                        # noch nicht 5 s
+    lauf.phase_since -= 1
+    lauf.tick()
+    assert lauf.phase == "intro"                        # die Ansage laeuft noch
+    sprecher.speaking = False
     lauf.tick()
     assert lauf.phase == "counting"
     lauf.stop()
+
+
+def test_ansagen_wechseln_ab(monkeypatch):
+    import sprachausgabe
+    monkeypatch.setattr(sprachausgabe.PiperVoice, "load", staticmethod(lambda path: None))
+    sprecher = sprachausgabe.SprachAusgabe()
+    sprachausgabe.random.seed(1)                        # fest: sonst fehlt selten ein Satz
+    gesagt = [sprecher.pick(sprachausgabe.NOCH) for _ in range(200)]
+    assert all(a != b for a, b in zip(gesagt, gesagt[1:]))
+    assert set(gesagt) == set(sprachausgabe.NOCH)
 
 
 # --- Architektur ---------------------------------------------------------------------------------

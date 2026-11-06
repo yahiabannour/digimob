@@ -20,9 +20,9 @@ from uebung import UEBER_ZIEL, Uebung
 class Butterfly(Uebung):
     title = "Butterfly"
     demo = "demos/butterfly.mp4"
-    # "Batterflei": so spricht die deutsche Stimme das Wort richtig aus
-    intro = ("Sie fangen jetzt mit der Übung Batterflei an. Bitte legen Sie die Hände runter "
-             "neben den Körper, damit die Übung starten kann.")
+    # "Batterflei": so spricht die deutsche Stimme das Wort richtig aus. Kein "Hände runter":
+    # Butterfly zählt nur mit der Hand über dem Ellbogen
+    intro = "Sie fangen jetzt mit der Übung Batterflei an."
     sides = ("both",)           # beide Arme zusammen, ein Zähler
     bar_style = "single"        # und ein Balken
     landmarks = ARME

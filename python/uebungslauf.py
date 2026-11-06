@@ -22,9 +22,8 @@ import time
 
 from camera.file_camera import FileCamera
 
-INTRO_SECONDS = 10      # Einfuehrung mindestens so lange, ohne Demo nur die Ansage
-DEMO_PLAYS = 1          # so oft laeuft die 3D-Demo ganz durch, bevor gezaehlt wird: jede Demo zeigt 2-3
-                        # Wiederholungen, so viele sollen die Patienten sehen (eine Demo dauert 9-18 s)
+INTRO_MIN_SECONDS = 5   # Einfuehrung mindestens so lange, sonst bis die Ansage fertig ist (Feedback
+                        # 2026-11-04: der Start dauerte zu lange; vorher lief die ganze Demo, 9-18 s)
 DONE_SECONDS = 5        # "Prima, gute Leistung!" stehen lassen, dann die naechste Uebung
 DEMO_SIZE = (1200, 900) # die Demo in der Groesse, in der die GUI sie zeigt (nicht wie die Kamera 640x480)
 POSE_FEHLER = 50        # so viele Bilder hintereinander scheitert die Pose-Erkennung, dann gibt der PoseThread auf
@@ -182,8 +181,7 @@ class Uebungslauf:
                 if frame is not None:
                     self.intro_image = self.bild.demo_frame(frame)
             self.show(self.intro_image, None, uebung.bar_style)
-            demo_done = self.demo is None or self.demo.plays >= DEMO_PLAYS
-            if demo_done and now - self.phase_since >= INTRO_SECONDS:
+            if now - self.phase_since >= INTRO_MIN_SECONDS and not self.sprecher.speaking:
                 self.close_demo()
                 self.set_phase("counting")
             return
