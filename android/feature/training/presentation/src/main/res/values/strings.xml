@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="exercise_progress" tools:ignore="PluralsCandidate">Übung %1$d von %2$d</string>
-    <string name="demo_skip_hint">Doppeltippen zum Überspringen</string>
+    <string name="demo_skip_hint">Nicken oder doppelt tippen zum Überspringen</string>
     <string name="word_remaining">noch</string>
     <string name="word_counted">gezählt</string>
     <string name="bar_description">%1$s %2$d</string>

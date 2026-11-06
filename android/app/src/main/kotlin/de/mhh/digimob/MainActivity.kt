@@ -30,6 +30,8 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         // "Aufnehmen" nur in der Entwickler-Version, wie tools/record_exercise.py
                         showRecording = BuildConfig.DEBUG,
+                        // Schwellen-Regler nur zum Einstellen; Patienten sehen nur Voll/Einfach (Feedback 2026-11-04)
+                        showThresholdSliders = BuildConfig.DEBUG,
                         onStartTraining = { ids, target ->
                             navController.navigate(TrainingRoute(exerciseIds = ids.map { it.key }, target = target))
                         },

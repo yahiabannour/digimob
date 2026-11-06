@@ -2,8 +2,9 @@
     <!-- Gesprochen: einfache Woerter mit Absicht (changelog 1.1.4) -->
     <string name="speech_intro_abduktion">Sie fangen jetzt mit der Übung Abduktion an. Bitte legen Sie die Hände unten neben den Körper, damit die Übung starten kann.</string>
     <string name="speech_intro_bizepscurls">Sie fangen jetzt mit der Übung Bizepscurls an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
-    <!-- "Batterflei": so sprach die Piper-Stimme das Wort richtig aus; mit Googles Stimme "deb" am Tablet gehoert, passt -->
-    <string name="speech_intro_butterfly">Sie fangen jetzt mit der Übung Batterflei an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
+    <!-- "Battaflai": Klinik hoerte "Batterflei" als "Betterfly"; am Tablet aus 4 Schreibweisen gewaehlt (2026-11-05).
+         Kein "Hände runter": Butterfly zaehlt nur mit der Hand ueber dem Ellbogen -->
+    <string name="speech_intro_butterfly">Sie fangen jetzt mit der Übung Battaflai an.</string>
     <string name="speech_intro_flexion_schulter">Sie fangen jetzt mit der Übung Flexion Schulter an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
     <string name="speech_intro_halswirbelsaeule">Sie fangen jetzt mit der Übung Halswirbelsäule an. Bitte halten Sie den Kopf ruhig in der Mitte, damit die Übung starten kann.</string>
     <string name="speech_intro_mobilisation_schulter">Sie fangen jetzt mit der Übung Mobilisation Schulter an. Bitte legen Sie die Hände runter neben den Körper, damit die Übung starten kann.</string>
@@ -15,11 +16,57 @@
         <item quantity="one">Okay, versuchen Sie %1$d Wiederholung zu schaffen</item>
         <item quantity="other">Okay, versuchen Sie %1$d Wiederholungen zu schaffen</item>
     </plurals>
-    <string name="speech_halfway">Super, die Hälfte ist geschafft</string>
-    <string name="speech_remaining">noch %1$d</string>
-    <string name="speech_last">Letzte Wiederholung</string>
+    <!-- Abwechselnd, nie zweimal hintereinander dasselbe (Feedback 2026-11-04) -->
+    <string-array name="speech_halfway">
+        <item>Super, die Hälfte ist geschafft</item>
+        <item>Klasse, schon die Hälfte</item>
+        <item>Sehr gut, die Hälfte haben Sie schon</item>
+        <item>Toll, die Hälfte ist schon vorbei</item>
+        <item>Wunderbar, die Hälfte ist geschafft</item>
+        <item>Gut gemacht, schon die Hälfte</item>
+        <item>Prima, Sie sind schon in der Mitte</item>
+        <item>Die Hälfte ist geschafft, das läuft sehr gut</item>
+        <item>Schön, Sie haben schon die Hälfte</item>
+        <item>Weiter so, die Hälfte liegt hinter Ihnen</item>
+    </string-array>
+    <string-array name="speech_remaining">
+        <item>noch %1$d</item>
+        <item>Gut so, noch %1$d</item>
+        <item>Weiter so, noch %1$d</item>
+        <item>Sehr schön, noch %1$d</item>
+        <item>Prima, noch %1$d</item>
+        <item>Klasse, noch %1$d</item>
+        <item>Sie machen das gut, noch %1$d</item>
+        <item>Bleiben Sie dran, noch %1$d</item>
+        <item>Das sieht gut aus, noch %1$d</item>
+        <item>Sie sind auf einem guten Weg, noch %1$d</item>
+        <item>Toll gemacht, noch %1$d</item>
+    </string-array>
+    <string-array name="speech_last">
+        <item>Letzte Wiederholung</item>
+        <item>Nur noch eine</item>
+        <item>Jetzt noch ein letztes Mal</item>
+        <item>Noch einmal, dann haben Sie es geschafft</item>
+        <item>Die letzte, Sie schaffen das</item>
+        <item>Ein letztes Mal, ganz ruhig</item>
+        <item>Eine noch, gleich haben Sie es geschafft</item>
+        <item>Und jetzt die letzte Wiederholung</item>
+        <item>Gleich geschafft, nur noch eine</item>
+    </string-array>
+    <string-array name="speech_done_praise">
+        <item>Tolle Arbeit!</item>
+        <item>Sehr gut gemacht!</item>
+        <item>Klasse!</item>
+        <item>Wunderbar!</item>
+        <item>Großartig!</item>
+        <item>Hervorragend!</item>
+        <item>Prima, das war richtig gut!</item>
+        <item>Sehr schön!</item>
+        <item>Das haben Sie toll gemacht!</item>
+        <item>Super gemacht!</item>
+    </string-array>
     <plurals name="speech_done">
-        <item quantity="one">Tolle Arbeit! Sie haben %1$d Wiederholung geschafft</item>
-        <item quantity="other">Tolle Arbeit! Sie haben alle %1$d Wiederholungen geschafft</item>
+        <item quantity="one">%2$s Sie haben %1$d Wiederholung geschafft</item>
+        <item quantity="other">%2$s Sie haben alle %1$d Wiederholungen geschafft</item>
     </plurals>
 </resources>

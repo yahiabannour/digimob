@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
 
 /**
  * Auswahlseite einer OP-Art: Uebungen ankreuzen und je Uebung die Schwellen einstellen, mit Voll/
- * Einfach oder den Schiebereglern (Hauptprogramm.schwellen_regler). Jede gueltige Aenderung wird
+ * Einfach oder den Schiebereglern (Hauptprogramm.schwellen_regler, nur Entwickler-Version). Jede gueltige Aenderung wird
  * gespeichert und gilt auch fuer "Alle automatisch starten" und die andere OP-Art. Gestartet wird
  * direkt aus der Oberflaeche (reine Navigation, kein Event).
  */

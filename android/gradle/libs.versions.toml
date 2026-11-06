@@ -1,6 +1,6 @@
 [versions]
 # Geprueft am 2026-10-18 (Maven Central / Google Maven, jeweils neueste stabile Version)
-agp = "9.4.1"
+agp = "9.5.1"
 kotlin = "2.4.21"
 androidJunit5 = "2.0.2"
 

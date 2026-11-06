@@ -48,6 +48,7 @@ import de.mhh.digimob.core.presentation.R as CoreR
 fun ExerciseSelectionRoot(
     opType: OpType,
     target: Int,
+    showThresholdSliders: Boolean,
     onStartTraining: (List<ExerciseId>, target: Int) -> Unit,
     onBackClick: () -> Unit,
     viewModel: ExerciseSelectionViewModel = koinViewModel { parametersOf(opType, target) }
@@ -57,7 +58,8 @@ fun ExerciseSelectionRoot(
         state = state,
         onAction = viewModel::onAction,
         onStartTraining = onStartTraining,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        showThresholdSliders = showThresholdSliders
     )
 }
 
@@ -66,7 +68,8 @@ fun ExerciseSelectionScreen(
     state: ExerciseSelectionState,
     onAction: (ExerciseSelectionAction) -> Unit,
     onStartTraining: (List<ExerciseId>, target: Int) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    showThresholdSliders: Boolean = true
 ) {
     PageScaffold(title = stringResource(R.string.selection_title, stringResource(state.opType.labelRes))) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
@@ -78,6 +81,7 @@ fun ExerciseSelectionScreen(
                 items(state.rows, key = { it.id }) { row ->
                     ExerciseRow(
                         row = row,
+                        showThresholdSliders = showThresholdSliders,
                         onExerciseClick = { onAction(ExerciseSelectionAction.OnExerciseClick(row.id)) },
                         onPresetSelect = { onAction(ExerciseSelectionAction.OnPresetSelect(row.id, it)) },
                         onThresholdChange = { key, value -> onAction(ExerciseSelectionAction.OnThresholdChange(row.id, key, value)) },
@@ -117,11 +121,13 @@ fun ExerciseSelectionScreen(
 
 /**
  * Eine Uebung in einer Zeile wie in der Python-App: Auswahlflaeche, Voll/Einfach, welches Preset
- * gilt, und ein Schieberegler je Schwelle. Die Schwellen gelten auch, wenn nicht angekreuzt.
+ * gilt, und ein Schieberegler je Schwelle (nur in der Entwickler-Version). Die Schwellen gelten
+ * auch, wenn nicht angekreuzt.
  */
 @Composable
 private fun ExerciseRow(
     row: ExerciseRowUi,
+    showThresholdSliders: Boolean,
     onExerciseClick: () -> Unit,
     onPresetSelect: (Preset) -> Unit,
     onThresholdChange: (key: String, value: Double) -> Unit,
@@ -146,7 +152,7 @@ private fun ExerciseRow(
             modifier = Modifier.width(120.dp)
         )
         // Unten ausgerichtet: bricht eine Beschriftung um, liegen die Regler trotzdem auf einer Linie
-        Row(
+        if (showThresholdSliders) Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.Bottom
@@ -248,6 +254,20 @@ private fun ExerciseSelectionScreenCustomPreview() {
             onAction = {},
             onStartTraining = { _, _ -> },
             onBackClick = {}
+        )
+    }
+}
+
+@Preview(name = "Release: ohne Regler", widthDp = 1280, heightDp = 800)
+@Composable
+private fun ExerciseSelectionScreenReleasePreview() {
+    DigiMobTheme {
+        ExerciseSelectionScreen(
+            previewState(OpType.BAUCH_OP),
+            onAction = {},
+            onStartTraining = { _, _ -> },
+            onBackClick = {},
+            showThresholdSliders = false
         )
     }
 }

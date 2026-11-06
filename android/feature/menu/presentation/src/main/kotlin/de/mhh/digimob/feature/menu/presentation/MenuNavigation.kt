@@ -16,6 +16,7 @@ import de.mhh.digimob.feature.menu.presentation.selection.ExerciseSelectionRoot
 fun NavGraphBuilder.menuGraph(
     navController: NavController,
     showRecording: Boolean,
+    showThresholdSliders: Boolean,
     onStartTraining: (List<ExerciseId>, target: Int) -> Unit,
     onRecordClick: () -> Unit,
     onQuit: () -> Unit
@@ -44,6 +45,7 @@ fun NavGraphBuilder.menuGraph(
             ExerciseSelectionRoot(
                 opType = OpType.valueOf(route.opType),
                 target = route.target,
+                showThresholdSliders = showThresholdSliders,
                 onStartTraining = dropUnlessResumed(onStartTraining),
                 onBackClick = dropUnlessResumed { navController.popBackStack() }
             )

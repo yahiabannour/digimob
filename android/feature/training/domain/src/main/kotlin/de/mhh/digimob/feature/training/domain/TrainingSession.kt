@@ -36,10 +36,11 @@ data class SessionState(
  * Fuehrt eine Warteschlange frischer Uebungen durch Einfuehrung, Zaehlen und Fertig
  * (uebungslauf.py). Kennt weder Kamera noch Oberflaeche:
  *  - [onFrame] mit jeder erkannten Pose
- *  - [tick] regelmaessig, auch ohne Bilder: Ende von Einfuehrung und "Prima"
- *  - [onDemoPlayed], wenn die 3D-Demo einmal ganz durchgelaufen ist
- *  - [skipIntro], wenn die Demo per Doppeltipp uebersprungen wird (nur Android)
- * Pausenzeit zaehlt nicht zur Einfuehrung und zu "Prima".
+ *  - [tick] mit jedem Kamerabild: Ende von Einfuehrung und "Prima"
+ *  - [skipIntro], wenn die Demo per Doppeltipp oder Nicken uebersprungen wird (nur Android)
+ * Die Einfuehrung endet, wenn die Ansage fertig ist und [INTRO_MIN_SECONDS] vergangen sind, oder
+ * mit einem Kopfnicken ([NodDetector], nur Android). Pausenzeit zaehlt nicht zur Einfuehrung und
+ * zu "Prima".
  */
 class TrainingSession(
     exercises: List<Exercise>,
@@ -49,12 +50,12 @@ class TrainingSession(
     private val queue = ArrayDeque(exercises)
     private val total = exercises.size
     private val milestones = Milestones(speaker)
+    private val nod = NodDetector()
 
     private lateinit var exercise: Exercise
     private var index = -1
     private var phase = Phase.FINISHED
     private var phaseSince = 0.0
-    private var demoPlays = 0
     private var pausedSince: Double? = null
 
     private val _state = MutableStateFlow(snapshot(null))
@@ -70,7 +71,11 @@ class TrainingSession(
     }
 
     fun onFrame(pose: Pose?, t: Double) {
-        if (isPaused || phase == Phase.INTRO || phase == Phase.FINISHED) return
+        if (isPaused || phase == Phase.FINISHED) return
+        if (phase == Phase.INTRO) {
+            if (nod.update(pose, t)) skipIntro()
+            return
+        }
         exercise.update(pose, t)
         // Ansagen nur waehrend gezaehlt wird, nur mit gueltigem Messwert, ohne Ziel nie
         val target = exercise.target
@@ -79,11 +84,6 @@ class TrainingSession(
         }
         if (phase == Phase.COUNTING && exercise.done) setPhase(Phase.DONE)
         publish()
-    }
-
-    fun onDemoPlayed() {
-        if (phase == Phase.INTRO) demoPlays++
-        tick()
     }
 
     /** Einfuehrung sofort beenden: die Ansage verstummt, gezaehlt wird ab jetzt. Sonst nichts. */
@@ -98,7 +98,7 @@ class TrainingSession(
         if (isPaused) return
         val elapsed = clock.nowSeconds() - phaseSince
         when (phase) {
-            Phase.INTRO -> if (demoPlays >= DEMO_PLAYS && elapsed >= INTRO_SECONDS) {
+            Phase.INTRO -> if (elapsed >= INTRO_MIN_SECONDS && !speaker.isSpeaking) {
                 setPhase(Phase.COUNTING)
                 publish()
             }
@@ -108,6 +108,7 @@ class TrainingSession(
     }
 
     fun setPaused(paused: Boolean) {
+        nod.reset()                 // die Pause ist eine Luecke in der Bildzeit
         val since = pausedSince
         if (paused && since == null) {
             pausedSince = clock.nowSeconds()
@@ -134,7 +135,7 @@ class TrainingSession(
         }
         exercise = nextExercise
         index++
-        demoPlays = 0
+        nod.reset()
         speaker.stop()          // was von der vorigen Uebung noch laeuft oder wartet, verstummt
         milestones.reset()
         setPhase(Phase.INTRO)
@@ -162,8 +163,7 @@ class TrainingSession(
     )
 
     companion object {
-        const val INTRO_SECONDS = 10.0  // Einfuehrung mindestens so lange
-        const val DEMO_PLAYS = 1        // so oft laeuft die 3D-Demo ganz durch, bevor gezaehlt wird
+        const val INTRO_MIN_SECONDS = 5.0   // Einfuehrung mindestens so lange, auch bei kurzer Ansage
         const val DONE_SECONDS = 5.0    // "Prima, gute Leistung!" stehen lassen, dann die naechste Uebung
     }
 }

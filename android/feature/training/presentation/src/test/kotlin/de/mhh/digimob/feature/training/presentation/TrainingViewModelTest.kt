@@ -58,10 +58,9 @@ class TrainingViewModelTest {
         return TrainingViewModel(ids, target, FakeThresholdRepository(thresholds), camera, speaker, clock)
     }
 
-    /** Einfuehrung zu Ende: Demo durch und 10 s vorbei. */
+    /** Einfuehrung zu Ende: Ansage fertig und 5 s vorbei. */
     private fun TrainingViewModel<String>.skipIntro() {
-        onAction(TrainingAction.OnDemoPlayed)
-        clock.now += 10.0
+        clock.now += 5.0
         camera.send(DOWN, clock.now)
     }
 
@@ -265,7 +264,7 @@ class TrainingViewModelTest {
         viewModel.onAction(TrainingAction.OnCameraPermissionResult(true))
         viewModel.events.test {
             viewModel.onAction(TrainingAction.OnStopClick)
-            viewModel.onAction(TrainingAction.OnDemoPlayed)     // die Demo meldet sich noch nach dem Stop
+            viewModel.onAction(TrainingAction.OnDemoSkip)       // ein Tipp auf die Demo noch nach dem Stop
             expectNoEvents()
         }
         assertThat(speaker.stops).isEqualTo(2)      // vor der ersten Uebung und beim Stop

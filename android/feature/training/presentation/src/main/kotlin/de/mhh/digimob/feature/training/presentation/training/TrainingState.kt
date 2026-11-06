@@ -34,7 +34,6 @@ sealed interface TrainingAction {
     data object OnPauseClick : TrainingAction
     data object OnKeypointsClick : TrainingAction
     data object OnZoomClick : TrainingAction
-    data object OnDemoPlayed : TrainingAction
     data object OnDemoSkip : TrainingAction
     data object OnStopClick : TrainingAction
 

@@ -8,6 +8,7 @@ import kotlin.math.sin
 class FakeSpeaker : Speaker {
     val said = mutableListOf<Announcement>()
     var stops = 0
+    override var isSpeaking = false
 
     override fun say(announcement: Announcement) {
         said += announcement
@@ -38,3 +39,12 @@ fun arms(arm: Double): Pose {
 
 val DOWN = arms(20.0)
 val UP = arms(160.0)
+
+/** Nase [noseAbove] Schulterbreiten ueber der Schulterlinie (Schultern 0.2 breit, 640x480). */
+fun head(noseAbove: Double, visibility: Double = 1.0): Pose {
+    val points = MutableList(33) { Landmark(0.5, 0.5, 0.0, 1.0, 1.0) }
+    points[11] = Landmark(0.4, 0.6, 0.0, visibility, 1.0)
+    points[12] = Landmark(0.6, 0.6, 0.0, visibility, 1.0)
+    points[0] = Landmark(0.5, 0.6 - noseAbove * 0.2 * 640 / 480, 0.0, 1.0, 1.0)
+    return Pose(points, 640, 480)
+}

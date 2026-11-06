@@ -71,10 +71,6 @@ class TrainingViewModel<Image : Any>(
                 zoom.value = !zoom.value
                 _state.update { it.copy(isZoomOn = zoom.value) }
             }
-            TrainingAction.OnDemoPlayed -> session?.let {
-                it.onDemoPlayed()
-                publish(it.state.value)
-            }
             TrainingAction.OnDemoSkip -> session?.let {
                 it.skipIntro()
                 publish(it.state.value)

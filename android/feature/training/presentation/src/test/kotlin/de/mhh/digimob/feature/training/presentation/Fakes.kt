@@ -39,6 +39,7 @@ class FakeClock(var now: Double = 0.0) : Clock {
 class FakeSpeaker : Speaker {
     val said = mutableListOf<Announcement>()
     var stops = 0
+    override var isSpeaking = false
     override fun say(announcement: Announcement) {
         said += announcement
     }

@@ -16,6 +16,9 @@ interface Speaker {
     /** Spricht nach der laufenden Ansage, ohne die Bildverarbeitung aufzuhalten. */
     fun say(announcement: Announcement)
 
+    /** Spricht gerade oder hat noch Ansagen vor sich (das Ende der Einfuehrung wartet darauf). */
+    val isSpeaking: Boolean
+
     /** Laufende Ansage abbrechen und wartende verwerfen (Stop, naechste Uebung). */
     fun stop()
 }

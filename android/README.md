@@ -6,7 +6,7 @@ and the app counts the repetitions. It shows one progress bar per arm and announ
 
 Compared with the desktop app:
 - Like the desktop, each exercise has **Voll | Einfach** plus one slider per threshold, and the app
-  saves the setting.
+  saves the setting. The sliders are in the debug build only; patients see Voll | Einfach.
 - There is no Bedienungsanleitung and no Aufnahmen testen.
 - Speech uses Android TextToSpeech (Google's male German voice) instead of Piper.
 - The debug build can **record** exercises on the tablet with a ground truth (like
@@ -76,8 +76,8 @@ The rules that follow from this:
 :core:data                        DataStore for the thresholds (Voll/Einfach or slider values)
 :core:presentation                UiText, ObserveAsEvents, dropUnlessResumed, German titles and messages
 :core:design-system               theme, colours, buttons, page layout
-:feature:menu:presentation        main menu → OP type + day → exercise selection with sliders
-:feature:training:domain          TrainingSession, Milestones, HeadZoom, interfaces for camera and voice
+:feature:menu:presentation        main menu → OP type + day → exercise selection (sliders: debug build)
+:feature:training:domain          TrainingSession, Milestones, HeadZoom, NodDetector, interfaces for camera and voice
 :feature:training:data            CameraX (+ video), MediaPipe, TextToSpeech, clock, recording files
 :feature:training:presentation    training screen, bars, demo player, recording screen (debug)
 build-logic/convention            Gradle convention plugins (digimob.*)
@@ -234,7 +234,7 @@ The menu uses the MVI pattern: State, Action, ViewModel, and a `Root` and a `Scr
 |---|---|---|
 | `MainMenuScreen` | – | *Übungen wählen*, *Aufnehmen* (debug build only), *Beenden* |
 | `OpTypeScreen` | `OpTypeViewModel` | Bauch-OP / Brust-OP, and the post-op day that sets the number of repetitions. The day survives process death (`SavedStateHandle`). |
-| `ExerciseSelectionScreen` | `ExerciseSelectionViewModel` | Tick exercises and set each one's thresholds: Voll/Einfach, a status ("Voll", "Einfach", "Voll = Einfach", "angepasst", "ungültig") and one slider per threshold. Dragging shows the value, letting go validates and saves it. *Speichern und starten* (ticked exercises) or *Alle automatisch starten*. |
+| `ExerciseSelectionScreen` | `ExerciseSelectionViewModel` | Tick exercises and set each one's thresholds: Voll/Einfach, a status ("Voll", "Einfach", "Voll = Einfach", "angepasst", "ungültig") and one slider per threshold (debug build only, `showThresholdSliders`). Dragging shows the value, letting go validates and saves it. *Speichern und starten* (ticked exercises) or *Alle automatisch starten*. |
 
 `MenuNavigation.kt` holds the menu's navigation graph (`menuGraph`), with type-safe routes in
 `MenuRoutes.kt`. The menu doesn't know the training feature. It reports
@@ -245,21 +245,24 @@ The menu uses the MVI pattern: State, Action, ViewModel, and a `Root` and a `Scr
 - **`TrainingSession`** (`uebungslauf.py`) takes the queue of fresh exercises through these phases:
 
   ```
-  INTRO ──(demo played once and ≥ 10 s)──▶ COUNTING ──(target reached)──▶ DONE ──(5 s "Prima")──▶ next exercise / FINISHED
+  INTRO ──(voice done and ≥ 5 s)──▶ COUNTING ──(target reached)──▶ DONE ──(5 s "Prima")──▶ next exercise / FINISHED
   ```
 
   - It counts only while `COUNTING`.
-  - `skipIntro()` (double tap on the demo) ends the intro at once and silences the voice; outside the
-    intro it does nothing.
+  - `skipIntro()` (double tap on the demo, or a head nod seen by `NodDetector`) ends the intro at once
+    and silences the voice; outside the intro it does nothing.
   - Pause stops everything, and paused time doesn't count towards the intro or "Prima".
   - `stop()` silences the voice.
 - **`Milestones`** (`sprachausgabe.milestones`) makes the announcements: start, half way, "noch N",
   last repetition, done. Each comes at most once per exercise.
+- **`NodDetector`** (Android only): a nod during the intro skips it. Nose height above the shoulder
+  line in shoulder widths drops `NOD_DEPTH` below the last second's highest and comes back within
+  `NOD_SECONDS`; this cancels out head zoom and distance.
 - **`HeadZoom`** (`apply_zoom`): the crop around the nose, smoothed (EMA 0.2), always inside the image.
   The integer rounding is the same as in Python.
 - **Interfaces:**
   - `LivePoseSource`: the camera, a `Flow<Result<PoseFrame, SourceError>>`
-  - `Speaker`: `say(Announcement)` and `stop()`
+  - `Speaker`: `say(Announcement)`, `stop()` and `isSpeaking` (the intro ends when it is false)
   - `Clock`
 - `SourceError` is `NO_CAMERA`, `CAMERA_FAILED` or `POSE_FAILED` (50 failed detections in a row).
 - **`Recording.kt`**: for recording on the tablet, `GroundTruth` (Python's `parse_reps`: one number
@@ -285,7 +288,11 @@ The menu uses the MVI pattern: State, Action, ViewModel, and a `Root` and a `Scr
   - It queues announcements (`QUEUE_ADD`).
   - Announcements made before the voice is loaded wait.
   - `stop()` also drops waiting announcements.
-  - The texts are in `res/values/strings.xml`, with plurals for "Wiederholung(en)".
+  - `isSpeaking`: an `UtteranceProgressListener` tracks its own utterances (no TTS call per camera frame).
+    If no engine starts, nothing waits, so the intro can't hang.
+  - The texts are in `res/values/strings.xml`, with plurals for "Wiederholung(en)". Half way (10), "noch N" (11),
+    the last repetition (9) and the praise before done (10) are string-arrays, the same sentences as the
+    desktop's `sprachausgabe.py`; `pickOther()` picks one at random, never the same as last time.
 - **`CameraXRecordingCamera`**: the same camera and pose, without zoom, plus CameraX `VideoCapture`
   (SD, no sound). If the camera can't run analysis and video together, it records keypoints only.
   The recording screen switches it off like the training screen does when the app is hidden; a
@@ -313,7 +320,7 @@ The menu uses the MVI pattern: State, Action, ViewModel, and a `Root` and a `Scr
   fits (800×600 dp on the tablet). Slots an exercise doesn't use stay empty, so the video never moves.
   - The camera image is 4:3 and **mirrored**, so the patient's left is on the left.
   - During the intro, the 3D demo (`DemoPlayer`, ExoPlayer, looped, mirrored) takes the image's place.
-    `DemoSkipOverlay` lies on top: a double tap skips the intro, a small hint says so.
+    `DemoSkipOverlay` lies on top: a double tap skips the intro, a small hint says so (and mentions the nod).
   - `KeypointOverlay` draws the skeleton when Keypoints is on: only the points the exercise computes
     from (`ExerciseCatalog.landmarks`).
 - **Bars** (`bar/`): the layout depends on the exercise's `BarStyle`.

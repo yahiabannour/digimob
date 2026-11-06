@@ -27,7 +27,7 @@ import de.mhh.digimob.core.designsystem.theme.DigiMobTheme
 import de.mhh.digimob.feature.training.presentation.R
 
 /**
- * Liegt ueber der Demo der Einfuehrung: Doppeltippen ueberspringt sie, der Hinweis steht unten
+ * Liegt ueber der Demo der Einfuehrung: Doppeltippen ueberspringt sie (Nicken: TrainingSession), der Hinweis steht unten
  * rechts (nicht gespiegelt). Eigene Flaeche ueber dem Player, der selbst ein Android-View ist.
  */
 @Composable

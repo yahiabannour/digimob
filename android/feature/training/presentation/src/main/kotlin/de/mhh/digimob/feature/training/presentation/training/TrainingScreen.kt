@@ -115,7 +115,6 @@ fun TrainingScreen(
         ExerciseArea(
             state = state,
             image = image,
-            onDemoPlayed = { onAction(TrainingAction.OnDemoPlayed) },
             onDemoSkip = { onAction(TrainingAction.OnDemoSkip) },
             modifier = Modifier.fillMaxSize().padding(12.dp)
         )
@@ -196,7 +195,6 @@ private val GAP = 12.dp
 internal fun ExerciseArea(
     state: TrainingState<*>,
     image: ImageBitmap?,
-    onDemoPlayed: () -> Unit,
     onDemoSkip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -229,7 +227,6 @@ internal fun ExerciseArea(
                                 DemoPlayer(
                                     assetPath = "demos/${exercise.key}.mp4",
                                     isPaused = state.isPaused,
-                                    onPlayedThrough = onDemoPlayed,
                                     modifier = Modifier.fillMaxSize()
                                 )
                                 DemoSkipOverlay(onSkip = onDemoSkip, modifier = Modifier.fillMaxSize())

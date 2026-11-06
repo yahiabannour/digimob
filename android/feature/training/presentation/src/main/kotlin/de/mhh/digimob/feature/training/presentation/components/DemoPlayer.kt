@@ -4,9 +4,7 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -21,19 +19,17 @@ import co.touchlab.kermit.Logger
 
 /**
  * Die 3D-Demo der Uebung in Endlosschleife, gespiegelt wie das Kamerabild (TextureView, eine
- * SurfaceView liesse sich nicht spiegeln). [onPlayedThrough] nach jedem ganzen Durchlauf; fehlt
- * die Demo, sofort einmal, dann zaehlt nur die Mindestzeit der Einfuehrung. Steht bei Pause still.
+ * SurfaceView liesse sich nicht spiegeln). Steht bei Pause still. Fehlt die Demo, bleibt das Bild
+ * leer; die Einfuehrung endet trotzdem mit der Ansage.
  */
 @OptIn(UnstableApi::class)
 @Composable
 internal fun DemoPlayer(
     assetPath: String,
     isPaused: Boolean,
-    onPlayedThrough: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val currentOnPlayedThrough by rememberUpdatedState(onPlayedThrough)
     val player = remember(assetPath) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri("asset:///$assetPath"))
@@ -45,17 +41,8 @@ internal fun DemoPlayer(
     // Der Player ist eine Ressource dieses Composables: anlegen und freigeben gehoeren hierher
     DisposableEffect(player) {
         val listener = object : Player.Listener {
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) currentOnPlayedThrough()
-            }
-
             override fun onPlayerError(error: PlaybackException) {
                 Logger.withTag("Demo").w(error) { "Keine Demo $assetPath, die Einfuehrung zeigt kein Bild" }
-                currentOnPlayedThrough()
             }
         }
         player.addListener(listener)

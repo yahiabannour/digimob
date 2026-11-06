@@ -20,7 +20,7 @@ class TrainingSessionTest {
     private val clock = FakeClock()
     private val speaker = FakeSpeaker()
 
-    /** skipIntro: Demo und 10 s schon vorbei, die Einfuehrungs-Ansage vergessen; es wird gezaehlt. */
+    /** skipIntro: Ansage fertig und 5 s vorbei, die Einfuehrungs-Ansage vergessen; es wird gezaehlt. */
     private fun session(skipIntro: Boolean = false, vararg ids: ExerciseId = arrayOf(ExerciseId.ABDUKTION)) =
         TrainingSession(
             exercises = ids.map {
@@ -31,8 +31,7 @@ class TrainingSessionTest {
         ).apply {
             start()
             if (skipIntro) {
-                onDemoPlayed()
-                at(clock.now + TrainingSession.INTRO_SECONDS)
+                at(clock.now + TrainingSession.INTRO_MIN_SECONDS)
                 speaker.said.clear()
             }
         }
@@ -60,26 +59,54 @@ class TrainingSessionTest {
     }
 
     @Test
-    fun `Einfuehrung braucht die ganze Demo und 10 s`() {
+    fun `Einfuehrung endet nach 5 s, wenn die Ansage fertig ist`() {
         val session = session()
         assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
-        session.at(12.0)
-        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)        // Demo noch nicht durch
-        clock.now = 3.0
-        session.onDemoPlayed()
-        session.at(9.99)
-        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)        // Demo durch, aber < 10 s
-        session.at(10.0)
+        session.at(4.99)
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)        // Ansage fertig, aber < 5 s
+        session.at(5.0)
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
+    }
+
+    @Test
+    fun `Einfuehrung wartet, solange die Ansage spricht`() {
+        val session = session()
+        speaker.isSpeaking = true
+        session.at(30.0)
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+        speaker.isSpeaking = false
+        session.at(30.1)
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
+    }
+
+    @Test
+    fun `Nicken - Einfuehrung vorbei, Ansage verstummt`() {
+        val session = session()
+        val stopsBefore = speaker.stops
+        listOf(1.0, 1.0, 0.8, 0.8, 1.0).forEachIndexed { i, h -> session.onFrame(head(h), 0.1 * i) }
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
+        assertThat(speaker.stops).isEqualTo(stopsBefore + 1)
+    }
+
+    @Test
+    fun `Nicken in der Pause und beim Zaehlen tut nichts`() {
+        val session = session()
+        session.setPaused(true)
+        listOf(1.0, 0.8, 1.0).forEachIndexed { i, h -> session.onFrame(head(h), 0.1 * i) }
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+        session.setPaused(false)
+        session.skipIntro()
+        val stopsBefore = speaker.stops
+        listOf(1.0, 0.8, 1.0).forEachIndexed { i, h -> session.onFrame(head(h), 1 + 0.1 * i) }
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
+        assertThat(speaker.stops).isEqualTo(stopsBefore)
     }
 
     @Test
     fun `waehrend der Einfuehrung wird nicht gezaehlt`() {
         val session = session()
         session.rep()
-        clock.now = 0.0
-        session.onDemoPlayed()
-        session.at(10.0)
+        session.at(TrainingSession.INTRO_MIN_SECONDS)
         assertThat(session.current!!.total).isEqualTo(0)
         assertThat(session.state.value.bars?.getValue(Side.LEFT)?.fill).isNull()
     }
@@ -126,8 +153,7 @@ class TrainingSessionTest {
         assertThat(speaker.stops).isEqualTo(stopsBefore + 1)     // was noch spricht, verstummt
         assertThat(speaker.said.last()).isEqualTo(Announcement.Intro(ExerciseId.ABDUKTION))
         speaker.said.clear()
-        session.onDemoPlayed()
-        session.at(clock.now + TrainingSession.INTRO_SECONDS)
+        session.at(clock.now + TrainingSession.INTRO_MIN_SECONDS)
         session.onFrame(DOWN, clock.now)
         assertThat(speaker.said).containsExactly(Announcement.Start(2))
     }
@@ -146,7 +172,7 @@ class TrainingSessionTest {
     fun `Doppeltipp - Einfuehrung sofort vorbei, Ansage verstummt, es wird gezaehlt`() {
         val session = session()
         val stopsBefore = speaker.stops
-        session.skipIntro()                                     // weder Demo noch 10 s
+        session.skipIntro()                                     // vor den 5 s
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
         assertThat(speaker.stops).isEqualTo(stopsBefore + 1)
         session.rep()
@@ -207,15 +233,14 @@ class TrainingSessionTest {
     @Test
     fun `Pause haelt Bilder an und ihre Zeit zaehlt nicht zur Einfuehrung`() {
         val session = session()
-        session.onDemoPlayed()
-        session.at(5.0)
+        session.at(2.0)
         session.setPaused(true)
         session.at(20.0)
         assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
         session.setPaused(false)
-        session.at(24.9)                                                    // 5 + 4.9 s ohne Pause
+        session.at(22.9)                                                    // 2 + 2.9 s ohne Pause
         assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
-        session.at(25.0)
+        session.at(23.0)
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
     }
 
@@ -231,14 +256,13 @@ class TrainingSessionTest {
     @Test
     fun `zweimal Pause ist eine Pause`() {
         val session = session()
-        session.onDemoPlayed()
         session.setPaused(true)
         clock.now = 50.0
         session.setPaused(true)
         session.setPaused(false)
-        session.at(59.9)
+        session.at(54.9)
         assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
-        session.at(60.0)
+        session.at(55.0)
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
     }
 
