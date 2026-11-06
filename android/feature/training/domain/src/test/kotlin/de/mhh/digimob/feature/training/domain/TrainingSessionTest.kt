@@ -72,10 +72,20 @@ class TrainingSessionTest {
     fun `Einfuehrung wartet, solange die Ansage spricht`() {
         val session = session()
         speaker.isSpeaking = true
-        session.at(30.0)
+        session.at(10.0)
         assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
         speaker.isSpeaking = false
-        session.at(30.1)
+        session.at(10.1)
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
+    }
+
+    @Test
+    fun `Einfuehrung endet spaetestens nach 20 s, auch wenn die Ansage haengt`() {
+        val session = session()
+        speaker.isSpeaking = true
+        session.at(TrainingSession.INTRO_MAX_SECONDS - 0.1)
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+        session.at(TrainingSession.INTRO_MAX_SECONDS)
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
     }
 
@@ -83,9 +93,31 @@ class TrainingSessionTest {
     fun `Nicken - Einfuehrung vorbei, Ansage verstummt`() {
         val session = session()
         val stopsBefore = speaker.stops
+        clock.now = TrainingSession.NOD_GRACE_SECONDS
         listOf(1.0, 1.0, 0.8, 0.8, 1.0).forEachIndexed { i, h -> session.onFrame(head(h), 0.1 * i) }
         assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
         assertThat(speaker.stops).isEqualTo(stopsBefore + 1)
+    }
+
+    @Test
+    fun `Nicken gleich zu Beginn der Einfuehrung tut nichts`() {
+        val session = session()
+        clock.now = TrainingSession.NOD_GRACE_SECONDS - 0.1
+        listOf(1.0, 1.0, 0.8, 0.8, 1.0).forEachIndexed { i, h -> session.onFrame(head(h), 0.1 * i) }
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+        clock.now = TrainingSession.NOD_GRACE_SECONDS                   // verbraucht, nicht nachgeholt
+        session.onFrame(head(1.0), 0.5)
+        assertThat(session.state.value.phase).isEqualTo(Phase.INTRO)
+    }
+
+    @Test
+    fun `Nicken vor der Grenze begonnen und danach fertig zaehlt`() {
+        val session = session()
+        clock.now = TrainingSession.NOD_GRACE_SECONDS - 0.3
+        listOf(1.0, 1.0, 0.8, 0.8).forEachIndexed { i, h -> session.onFrame(head(h), 0.1 * i) }
+        clock.now = TrainingSession.NOD_GRACE_SECONDS
+        session.onFrame(head(1.0), 0.4)
+        assertThat(session.state.value.phase).isEqualTo(Phase.COUNTING)
     }
 
     @Test

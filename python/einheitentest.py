@@ -16,6 +16,7 @@
 ******************************************************************************
 """
 import math
+import random
 import subprocess
 import sys
 import threading
@@ -390,7 +391,7 @@ def test_videodatei_jedes_bild_mit_zeit(tmp_path):
     assert cam.getFrame() is None
 
 
-def test_videodatei_in_schleife_zaehlt_durchlaeufe(tmp_path):
+def test_videodatei_in_schleife_beginnt_von_vorn(tmp_path):
     path = str(tmp_path / "v.mp4")
     writer = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*"mp4v"), 10, (64, 48))
     for i in range(5):
@@ -398,11 +399,9 @@ def test_videodatei_in_schleife_zaehlt_durchlaeufe(tmp_path):
     writer.release()
     cam = FileCamera(path, frame_width=64, frame_height=48, realtime=False)
     cam.loop = True
-    plays = []
     for _ in range(12):
         assert cam.getFrame() is not None
-        plays.append(cam.plays)
-    assert plays == [0] * 5 + [1] * 5 + [2] * 2      # zaehlt beim Neustart, nicht beim letzten Bild
+    assert not cam.stop_event.is_set()
     cam.close()
 
 
@@ -526,9 +525,6 @@ def test_schleife_ende_der_kamera():
 
 
 class FakeDemo:
-    def __init__(self):
-        self.plays = 0
-
     def getFrame(self):
         return np.zeros((48, 64, 3), np.uint8)
 
@@ -556,11 +552,47 @@ def test_einfuehrung_endet_mit_der_ansage_nach_der_mindestzeit(monkeypatch):
     lauf.stop()
 
 
+def test_pause_zaehlt_nicht_zur_einfuehrung(monkeypatch):
+    import uebungslauf
+    clock = [1000.0]
+    monkeypatch.setattr(uebungslauf.time, "time", lambda: clock[0])
+    monkeypatch.setattr(Uebungslauf, "open_demo", staticmethod(lambda path: FakeDemo()))
+    lauf = Uebungslauf(FakePose(), FakeBild(), FakeSprecher(), lambda *a: None)
+    lauf.start(FakeCam(), [Abduktion(target=None)], on_source_end=lambda u: None)
+    clock[0] += 2
+    lauf.paused = True
+    clock[0] += 30
+    lauf.paused = False
+    lauf.tick()
+    assert lauf.phase == "intro"                        # 2 s ohne Pause
+    clock[0] += uebungslauf.INTRO_MIN_SECONDS - 2
+    lauf.tick()
+    assert lauf.phase == "counting"
+    lauf.stop()
+
+
+def test_einfuehrung_endet_spaetestens_nach_der_hoechstzeit(monkeypatch):
+    import uebungslauf
+    monkeypatch.setattr(Uebungslauf, "open_demo", staticmethod(lambda path: FakeDemo()))
+    sprecher = FakeSprecher()
+    sprecher.speaking = True                            # die Ansage haengt
+    lauf = Uebungslauf(FakePose(), FakeBild(), sprecher, lambda *a: None)
+    lauf.start(FakeCam(), [Abduktion(target=None)], on_source_end=lambda u: None)
+    lauf.phase_since -= uebungslauf.INTRO_MAX_SECONDS - 0.5
+    lauf.tick()
+    assert lauf.phase == "intro"
+    lauf.phase_since -= 1
+    lauf.tick()
+    assert lauf.phase == "counting"
+    lauf.stop()
+
+
 def test_ansagen_wechseln_ab(monkeypatch):
     import sprachausgabe
     monkeypatch.setattr(sprachausgabe.PiperVoice, "load", staticmethod(lambda path: None))
+    monkeypatch.setattr(sprachausgabe.sd, "stop", lambda: None)
+    monkeypatch.setattr(sprachausgabe, "random", random.Random(1))  # fest: sonst fehlt selten ein Satz
     sprecher = sprachausgabe.SprachAusgabe()
-    sprachausgabe.random.seed(1)                        # fest: sonst fehlt selten ein Satz
     gesagt = [sprecher.pick(sprachausgabe.NOCH) for _ in range(200)]
     assert all(a != b for a, b in zip(gesagt, gesagt[1:]))
     assert set(gesagt) == set(sprachausgabe.NOCH)

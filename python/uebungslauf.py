@@ -24,6 +24,7 @@ from camera.file_camera import FileCamera
 
 INTRO_MIN_SECONDS = 5   # Einfuehrung mindestens so lange, sonst bis die Ansage fertig ist (Feedback
                         # 2026-11-04: der Start dauerte zu lange; vorher lief die ganze Demo, 9-18 s)
+INTRO_MAX_SECONDS = 20  # laengstens so lange, auch wenn die Ansage haengt (sd.wait() kehrt nicht zurueck)
 DONE_SECONDS = 5        # "Prima, gute Leistung!" stehen lassen, dann die naechste Uebung
 DEMO_SIZE = (1200, 900) # die Demo in der Groesse, in der die GUI sie zeigt (nicht wie die Kamera 640x480)
 POSE_FEHLER = 50        # so viele Bilder hintereinander scheitert die Pose-Erkennung, dann gibt der PoseThread auf
@@ -93,7 +94,7 @@ class Uebungslauf:
         self.show = show            # Anzeige: show(bild_bgr oder None, balken, bar_style)
                                     # balken: {seite: 0..1 oder None} oder None (alle leer)
         self.running = False
-        self.paused = False
+        self._paused_since = None   # time.time() bei Pause, sonst None
         self.demo = None            # FileCamera der 3D-Demo, nur waehrend der Einfuehrung
         self.worker = None          # PoseThread, live nur waehrend Zaehlen/Fertig
 
@@ -163,6 +164,20 @@ class Uebungslauf:
     def set_phase(self, phase):
         self.phase, self.phase_since = phase, time.time()
 
+    @property
+    def paused(self):
+        return self._paused_since is not None
+
+    @paused.setter
+    def paused(self, paused):
+        # Die Pause zaehlt nicht zur Einfuehrung und zu "Prima" (wie TrainingSession.setPaused auf Android)
+        if paused and self._paused_since is None:
+            self._paused_since = time.time()
+        elif not paused and self._paused_since is not None:
+            if hasattr(self, "phase_since"):
+                self.phase_since += time.time() - self._paused_since
+            self._paused_since = None
+
     def tick(self):
         if not self.running or self.paused:
             return
@@ -181,7 +196,8 @@ class Uebungslauf:
                 if frame is not None:
                     self.intro_image = self.bild.demo_frame(frame)
             self.show(self.intro_image, None, uebung.bar_style)
-            if now - self.phase_since >= INTRO_MIN_SECONDS and not self.sprecher.speaking:
+            elapsed = now - self.phase_since
+            if elapsed >= INTRO_MIN_SECONDS and (not self.sprecher.speaking or elapsed >= INTRO_MAX_SECONDS):
                 self.close_demo()
                 self.set_phase("counting")
             return
