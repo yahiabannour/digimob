@@ -276,7 +276,7 @@ def list_cameras():
         indexes = sorted(int(name[len("video"):]) for name in os.listdir(V4L2_SYSFS) if name.startswith("video"))
         backend = cv2.CAP_V4L2
     else:
-        indexes, backend = range(5), cv2.CAP_ANY   # wie Camera.autoselect_cam_id()
+        indexes, backend = range(5), cv2.CAP_ANY
 
     log_level = cv2.utils.logging.getLogLevel()
     cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)   # Warnungen der Metadaten-Geraete

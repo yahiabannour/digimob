@@ -1,5 +1,6 @@
 __pycache__
 python/Log.log
+python/Log.log.1
 .venv/
 python/recordings/**/*.mp4
 python/recordings/**/*.webm

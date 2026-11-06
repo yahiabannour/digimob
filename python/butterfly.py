@@ -20,7 +20,8 @@ from uebung import UEBER_ZIEL, Uebung
 class Butterfly(Uebung):
     title = "Butterfly"
     demo = "demos/butterfly.mp4"
-    # "Batterflei": so spricht die deutsche Stimme das Wort richtig aus. Kein "Hände runter":
+    # "Batterflei": so spricht die Piper-Stimme das Wort richtig aus (Android sagt "Battaflai",
+    # dessen Stimme hoerte die Klinik bei "Batterflei" als "Betterfly"). Kein "Hände runter":
     # Butterfly zählt nur mit der Hand über dem Ellbogen
     intro = "Sie fangen jetzt mit der Übung Batterflei an."
     sides = ("both",)           # beide Arme zusammen, ein Zähler

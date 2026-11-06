@@ -24,8 +24,9 @@ class LoggingConfigurator:
         self.log_file = log_file
         self.logger.handlers.clear()
 
+        # Das Log des vorigen Laufs bleibt als Log.log.1: nach einem Absturz startet man die App neu
         if os.path.exists(log_file):
-            os.remove(log_file)
+            os.replace(log_file, log_file + ".1")
 
     def setLoggingMode(self, loggingMode):
         self.logger.handlers.clear()
