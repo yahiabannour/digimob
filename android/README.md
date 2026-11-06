@@ -46,8 +46,10 @@ The build reads two things from the desktop app next to this folder, so `../pyth
 - **Recordings:** `../python/systest.txt` plus the keypoints and `summary.json` in
   `../python/recordings/`, used by the system test.
 
-The debug build differs from the release build in one way: it logs every live camera frame's keypoints
-(see [Debugging on the tablet](#debugging-on-the-tablet)).
+The debug build differs from the release build in three ways, so never give it to patients:
+- it logs every live camera frame's keypoints (see [Debugging on the tablet](#debugging-on-the-tablet)),
+- the exercise selection shows the threshold sliders (patients only get Voll | Einfach),
+- the main menu has "Aufnehmen", the recording screen.
 
 ---
 

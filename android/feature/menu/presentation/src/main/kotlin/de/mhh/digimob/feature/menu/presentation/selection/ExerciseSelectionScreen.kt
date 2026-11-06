@@ -69,7 +69,7 @@ fun ExerciseSelectionScreen(
     onAction: (ExerciseSelectionAction) -> Unit,
     onStartTraining: (List<ExerciseId>, target: Int) -> Unit,
     onBackClick: () -> Unit,
-    showThresholdSliders: Boolean = true
+    showThresholdSliders: Boolean
 ) {
     PageScaffold(title = stringResource(R.string.selection_title, stringResource(state.opType.labelRes))) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
@@ -223,7 +223,7 @@ private fun previewState(
 @Composable
 private fun ExerciseSelectionScreenEmptyPreview() {
     DigiMobTheme {
-        ExerciseSelectionScreen(previewState(OpType.BAUCH_OP), onAction = {}, onStartTraining = { _, _ -> }, onBackClick = {})
+        ExerciseSelectionScreen(previewState(OpType.BAUCH_OP), onAction = {}, onStartTraining = { _, _ -> }, onBackClick = {}, showThresholdSliders = true)
     }
 }
 
@@ -235,7 +235,8 @@ private fun ExerciseSelectionScreenCheckedPreview() {
             previewState(OpType.BRUST_OP, checked = setOf(ExerciseId.BUTTERFLY, ExerciseId.ROTATION)),
             onAction = {},
             onStartTraining = { _, _ -> },
-            onBackClick = {}
+            onBackClick = {},
+            showThresholdSliders = true
         )
     }
 }
@@ -253,7 +254,8 @@ private fun ExerciseSelectionScreenCustomPreview() {
             ),
             onAction = {},
             onStartTraining = { _, _ -> },
-            onBackClick = {}
+            onBackClick = {},
+            showThresholdSliders = true
         )
     }
 }
@@ -280,7 +282,8 @@ private fun ExerciseSelectionScreenErrorPreview() {
             previewState(OpType.BRUST_OP, error = UiText.DynamicString("Der Speicher ist voll.")),
             onAction = {},
             onStartTraining = { _, _ -> },
-            onBackClick = {}
+            onBackClick = {},
+            showThresholdSliders = true
         )
     }
 }
